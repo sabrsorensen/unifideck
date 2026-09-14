@@ -2,7 +2,8 @@
  * Tab definitions and per-tab collection container for the custom
  * Unifideck library tabs. Ported from staging:src/tabs/TabContainer.ts.
  *
- * `UNIFIDECK_TABS` declares the 10 tabs spliced into Steam's library.
+ * `getUnifideckTabs()` declares the tabs spliced into Steam's library
+ * (deck-compat, all, installed, one per connectable store, non-Steam).
  * `UnifideckTabContainer` wraps Steam's collection shape so each tab
  * is treated as a first-class collection (count, sort, filter).
  * `tabManager` is the singleton that the library-patch hook reads to
@@ -89,15 +90,21 @@ export function getUnifideckTabs(): UnifideckTab[] {
       filters: [{ type: "store", params: { store: "battlenet" } }],
     },
     {
+      id: "unifideck-w3dhub",
+      title: t("deckTabs.w3dhub"),
+      position: 9,
+      filters: [{ type: "store", params: { store: "w3dhub" } }],
+    },
+    {
       id: "unifideck-microsoft",
       title: t("deckTabs.microsoft"),
-      position: 9,
+      position: 10,
       filters: [{ type: "store", params: { store: "microsoft" } }],
     },
     {
       id: "unifideck-gamevault",
       title: t("deckTabs.gamevault"),
-      position: 10,
+      position: 11,
       filters: [{ type: "store", params: { store: "gamevault" } }],
     },
     {
@@ -105,7 +112,7 @@ export function getUnifideckTabs(): UnifideckTab[] {
       // before it takes its number and this one moves down.
       id: "unifideck-nonsteam",
       title: t("deckTabs.nonSteam"),
-      position: 11,
+      position: 12,
       filters: [{ type: "nonSteam", params: {} }],
     },
   ];
@@ -385,7 +392,8 @@ type ConnectableStore =
   | "ubisoft"
   | "battlenet"
   | "microsoft"
-  | "gamevault";
+  | "gamevault"
+  | "w3dhub";
 
 class TabManager {
   private tabs: UnifideckTabContainer[] = [];
@@ -398,6 +406,7 @@ class TabManager {
     battlenet: 0,
     microsoft: 0,
     gamevault: 0,
+    w3dhub: 0,
   };
   private version = 0;
   private listeners: (() => void)[] = [];
@@ -449,6 +458,7 @@ class TabManager {
       "unifideck-amazon": "amazon",
       "unifideck-ubisoft": "ubisoft",
       "unifideck-battlenet": "battlenet",
+      "unifideck-w3dhub": "w3dhub",
       "unifideck-microsoft": "microsoft",
       "unifideck-gamevault": "gamevault",
     };
