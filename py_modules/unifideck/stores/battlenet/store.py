@@ -11,9 +11,11 @@ Ownership is read from the **client's own local state**, not from the web:
 ``CachedData.db`` holds the account's licence ids, and the cached PUB
 catalog turns them into playable titles by evaluating a small rule
 language. Those rules also need ``game_account`` facts for free-to-play and
-subscription titles, which would come from ``games-and-subs``. **Nothing
-fetches them**, so those titles are missing — see
-:meth:`_game_account_programs` and audit §3.5 finding A.
+subscription titles — audit §3.5 finding A / GitHub #447. That secondary
+fact comes from ``games-and-subs``, fetched over the shared Edge profile
+once the native client sign-in lands (:meth:`_refresh_game_accounts`); see
+``ownership/game_accounts.py`` for the fetch/parse/resolve and
+:meth:`_game_account_programs` for the cache this store reads.
 
 Consequence: the library is unknown until the user has signed into the
 client once. That is not a new constraint — install and launch already
@@ -87,6 +89,14 @@ class BattlenetStore(WrapperSessionHooks, StoreBase):
         )
         # Injected post-discovery by services/bootstrap/store_injector.py.
         self._shortcut_service: Any | None = None
+        # Shared Edge browser — same instance GOG/Epic/Amazon/Microsoft use.
+        # Only used for the secondary game_account_programs enrichment
+        # (see _refresh_game_accounts); primary ownership never touches it.
+        self._edge: Any | None = None
+        # Handle for the in-flight game-accounts enrichment task, if any,
+        # so a second sign-in doesn't pile up a second Edge launch on top
+        # of one already running.
+        self._game_accounts_task: asyncio.Task[None] | None = None
         # The sign-in happens in a detached client we never see the exit of, so
         # this is the only thing that reports a verdict. Without it the
         # frontend's AuthDispatcher waits on an event nobody emits and holds
@@ -161,12 +171,13 @@ class BattlenetStore(WrapperSessionHooks, StoreBase):
     def _game_account_programs(self) -> frozenset[str]:
         """Programs the account has a game account for.
 
-        **Always empty today: a gap, not a safe default.** Nothing writes
-        the ``game_accounts`` cache this reads — the consumer shipped, the
-        producer never did (§3.5 A) — so every free-to-play and
-        subscription title is dropped. ``library.py``'s header measures 17
-        programs from licences against 22 with game accounts;
-        ``count_game_account_gated`` logs the loss each sync.
+        Populated by :meth:`_refresh_game_accounts` once per sign-in (§3.5
+        A / GitHub #447: this cache had a consumer and no producer until
+        then). Empty here just means that enrichment hasn't completed yet
+        — first sign-in, Edge unavailable, the user hasn't finished the
+        web login, or the fetch failed — never a hard error: licence-gated
+        titles are unaffected either way, and ``count_game_account_gated``
+        keeps logging the size of whatever gap remains each sync.
         """
         cached = self._cached_game_accounts()
         return frozenset(cached)
@@ -203,6 +214,115 @@ class BattlenetStore(WrapperSessionHooks, StoreBase):
         self._cached_available = True
         with contextlib.suppress(OSError):
             self._signed_out_marker.unlink(missing_ok=True)
+        self._start_game_accounts_refresh()
+
+    def _start_game_accounts_refresh(self) -> None:
+        """Kick off the game-accounts web enrichment in the background.
+
+        Fire-and-forget, deliberately: this is secondary enrichment (§3.5
+        A / GitHub #447), and the native-client sign-in this follows is
+        already complete and confirmed by the time we're called — nothing
+        downstream should wait on, or be able to fail because of, this.
+
+        Skips outright rather than replacing a task already in flight: the
+        user pressing Sign In again while the first Edge window is still
+        up would otherwise orphan it (nothing kills the old Edge process),
+        and a second launch onto the same CDP port races the first for the
+        singleton profile lock. One in-flight refresh is enough — it either
+        finishes and gets cached, or it times out and the next successful
+        sign-in tries again.
+        """
+        if self._game_accounts_task is not None and not self._game_accounts_task.done():
+            logger.debug(
+                "[Battlenet] game-accounts refresh already in flight, skipping",
+            )
+            return
+        self._game_accounts_task = asyncio.create_task(
+            self._refresh_game_accounts(),
+        )
+
+    async def _refresh_game_accounts(self) -> None:
+        """Fetch and cache ``game_account_programs`` over the shared Edge profile.
+
+        Opens the shared Edge browser to the account page, polls for
+        ``.battle.net`` session cookies (the user completing an ordinary
+        web login — a separate action from the native-client sign-in this
+        is triggered by), and on success resolves the response's numeric
+        ``titleId``s against the locally cached PUB catalog before writing
+        the ``game_accounts`` cache :meth:`_cached_game_accounts` reads.
+
+        Every failure path logs and returns — never raises — because
+        nothing downstream treats an empty cache as anything worse than
+        "this enrichment hasn't landed yet" (see
+        :meth:`_game_account_programs`).
+        """
+        from .ownership import parse_title_ids, read_catalog, resolve_program_ids
+
+        edge = self._edge
+        if edge is None:
+            logger.info(
+                "[Battlenet] game-accounts refresh: no Edge browser injected, skipping",
+            )
+            return
+        drive_c = self._auth_drive_c
+        if drive_c is None:
+            logger.info(
+                "[Battlenet] game-accounts refresh: no auth prefix yet, skipping",
+            )
+            return
+        if not edge.launch_auth("https://account.battle.net/"):
+            logger.info(
+                "[Battlenet] game-accounts refresh: could not launch Edge",
+            )
+            return
+        try:
+            response = await self._poll_games_and_subs(edge)
+        finally:
+            edge.kill()
+        if response is None:
+            logger.info(
+                "[Battlenet] game-accounts refresh: no session within the "
+                "poll window, giving up for this sign-in",
+            )
+            return
+        title_ids = parse_title_ids(response)
+        catalog = await asyncio.to_thread(read_catalog, drive_c)
+        program_ids = resolve_program_ids(title_ids, catalog)
+        self._cache.set("battlenet", "game_accounts", sorted(program_ids))
+        logger.info(
+            "[Battlenet] game-accounts refresh: %d title(s) -> %d resolved "
+            "program(s) cached",
+            len(title_ids), len(program_ids),
+        )
+
+    # Poll cadence/ceiling for the web login. Generous for the same reason
+    # WrapperAuthMonitor's is: this bounds a human completing an ordinary
+    # web login (credentials, 2FA), not a machine operation.
+    _GAME_ACCOUNTS_POLL_INTERVAL_S = 2.0
+    _GAME_ACCOUNTS_POLL_TIMEOUT_S = 10 * 60
+
+    async def _poll_games_and_subs(self, edge: Any) -> dict[str, Any] | None:
+        """Poll until games-and-subs answers, or the ceiling is reached.
+
+        Polling the endpoint itself (rather than watching for a specific
+        cookie name to appear) sidesteps needing to know in advance which
+        of the session cookies Blizzard actually requires — that has
+        already drifted once (docs/feasibility/battlenet.md §8 vs §9), and
+        polling the real endpoint is the one check that can't go stale.
+        """
+        from .ownership import fetch_games_and_subs
+
+        elapsed = 0.0
+        while elapsed < self._GAME_ACCOUNTS_POLL_TIMEOUT_S:
+            await asyncio.sleep(self._GAME_ACCOUNTS_POLL_INTERVAL_S)
+            elapsed += self._GAME_ACCOUNTS_POLL_INTERVAL_S
+            cookies = await edge.get_cookies()
+            if not cookies:
+                continue
+            response = await fetch_games_and_subs(cookies)
+            if response is not None:
+                return response
+        return None
 
     async def _auth_session_landed(self) -> bool:
         """Has a *new* session appeared in the auth prefix?

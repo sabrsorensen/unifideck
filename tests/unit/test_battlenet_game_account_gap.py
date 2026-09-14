@@ -1,27 +1,27 @@
 """The free-to-play gap is measured, not silent.
 
-Audit §3.5, finding A. ``BattlenetStore._cached_game_accounts`` reads a
-``game_accounts`` cache key that **nothing in the tree ever writes** — the
-consumer shipped with the initial Battle.net integration and the producer
-was never built. So ``AccountFacts.game_account_programs`` is always empty,
-``rules._match_game_account`` can never match, and every title whose catalog
-rule keys on ``game_account`` rather than ``license_id`` is dropped: the
-free-to-play and subscription set. ``library.py``'s own header measures it
-on a real account — 17 programs from licences, 22 with game accounts.
+Audit §3.5, finding A / GitHub #447. ``BattlenetStore._cached_game_accounts``
+reads a ``game_accounts`` cache key that, until
+``BattlenetStore._refresh_game_accounts`` (``ownership/game_accounts.py``)
+landed, nothing in the tree ever wrote — the consumer shipped with the
+initial Battle.net integration and the producer came later. So
+``AccountFacts.game_account_programs`` could be permanently empty,
+``rules._match_game_account`` could never match, and every title whose
+catalog rule keys on ``game_account`` rather than ``license_id`` was
+dropped: the free-to-play and subscription set. ``library.py``'s own
+header measures it on a real account — 17 programs from licences, 22 with
+game accounts.
 
-Two things kept that hidden, and both are pinned here:
-
-* the consumer's docstring described the producer as if it existed;
-* ``test_battlenet_ownership`` proves the rule engine handles game accounts
-  by hand-building the facts, so it passes while production is empty.
-
-These tests assert the *gap is visible* rather than closed. They should
-keep passing when the producer lands: ``count_game_account_gated`` returns
-0 once facts exist, which is the honest signal either way.
+The producer is a background web fetch (shared Edge profile, CDP cookie
+read, ``games-and-subs``), so the cache can still legitimately be empty at
+any given moment — first sign-in, no Edge injected, the fetch still in
+flight, or it having failed this time. ``count_game_account_gated`` exists
+for exactly that: it stays a real, useful signal regardless of *why* the
+facts are missing, not just for the now-closed "nothing writes this at
+all" case these tests originally pinned.
 """
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from unifideck.stores.battlenet.library import count_game_account_gated
@@ -86,29 +86,3 @@ def test_no_gap_reported_for_a_purely_licence_gated_catalog() -> None:
 def test_empty_catalog_reports_no_gap() -> None:
     facts = AccountFacts(licence_ids=frozenset({1}))
     assert count_game_account_gated(_Catalog({}), facts) == 0
-
-
-def test_the_cache_key_the_store_reads_still_has_no_writer() -> None:
-    """A failing-by-design marker for the producer's own change.
-
-    This is the whole of finding A in one assertion: the read exists, the
-    write does not. When the producer lands, this test is what tells you
-    to delete it — and if it ever passes again after that, the producer
-    has regressed to silence.
-    """
-    root = Path(__file__).resolve().parents[2]
-    writers = []
-    for path in (root / "py_modules").rglob("*.py"):
-        text = path.read_text(encoding="utf-8", errors="ignore")
-        for line in text.splitlines():
-            if "game_accounts" not in line:
-                continue
-            # A write goes through CacheManager.set for the battlenet
-            # namespace; the known read uses .get and logout uses .clear.
-            if ".set(" in line:
-                writers.append(f"{path.name}: {line.strip()}")
-    assert writers == [], (
-        "a writer for the battlenet game_accounts cache now exists — "
-        "finding A is closed, so delete this test and the "
-        "count_game_account_gated warning it guards"
-    )

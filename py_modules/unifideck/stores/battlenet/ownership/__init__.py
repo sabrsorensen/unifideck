@@ -17,6 +17,13 @@ misses everything purchased. Measured 2026-08-09 on one account: licences
 resolved 9 families, game accounts contributed 5 more.
 """
 
+from .game_accounts import (
+    GAMES_AND_SUBS_URL,
+    cookie_header,
+    fetch_games_and_subs,
+    parse_title_ids,
+    resolve_program_ids,
+)
 from .installed import (
     InstalledGame,
     merge_install_state,
@@ -42,23 +49,28 @@ from .rules import (
 )
 
 __all__ = [
+    "GAMES_AND_SUBS_URL",
     "AccountFacts",
     "AccountLicences",
     "CatalogEntry",
     "GrantedProduct",
     "InstalledGame",
     "MergedCatalog",
+    "cookie_header",
     "evaluate_catalog",
     "evaluate_program",
+    "fetch_games_and_subs",
     "load_catalog",
     "matches",
     "merge_fragments",
     "merge_install_state",
     "parse_aggregate",
     "parse_licences",
+    "parse_title_ids",
     "read_aggregate",
     "read_catalog",
     "read_installed",
     "read_licences",
     "resolve_host_paths",
+    "resolve_program_ids",
 ]

@@ -63,11 +63,18 @@ _STORE_INJECTIONS: dict[str, tuple[tuple[str, str], ...]] = {
         ("_shortcut_service", "shortcut"),
     ),
     # Battle.net signs in through the vendor client in its own prefix, so it
-    # needs the shortcut service to place the auth tile. It deliberately does
-    # NOT take the Edge/CDP services: ownership is read from the client's
-    # local licence ledger, and the web endpoint is optional enrichment only.
+    # needs the shortcut service to place the auth tile. Primary ownership
+    # (the licence ledger) is entirely local and needs neither Edge nor CDP.
+    # It DOES take _edge for the secondary game_account_programs enrichment
+    # (audit §3.5 finding A / GitHub #447): games-and-subs is a web-only
+    # fact, fetched via the same shared Edge profile GOG/Epic/Amazon/
+    # Microsoft already use — see ownership/game_accounts.py. A missing
+    # _edge (container slot failed) just means that enrichment step is
+    # skipped; it never blocks the native-client sign-in or the library
+    # read that depends on licences alone.
     "battlenet": (
         ("_shortcut_service", "shortcut"),
+        ("_edge", "edge_browser"),
     ),
 }
 

@@ -253,11 +253,14 @@ def count_game_account_gated(
     an exact figure because a ``game_account`` rule may name a program id
     that is not itself a catalog key.
 
-    This exists because the gap is otherwise **completely silent**: nothing
-    in the tree ever writes the ``game_accounts`` cache the store reads, so
-    ``game_account_programs`` is always empty, every free-to-play and
-    subscription title is dropped, and the library simply looks smaller
-    than the account. See audit §3.5 finding A.
+    This exists because an empty-facts library is otherwise **silent**:
+    ``store._refresh_game_accounts`` (audit §3.5 finding A / GitHub #447)
+    now populates the ``game_accounts`` cache the store reads, but it does
+    so as a background web fetch that can be mid-flight, skipped (no Edge
+    injected), or simply not yet run for this sign-in — every one of those
+    states looks identical to ``game_account_programs`` from here, and
+    without this, "free-to-play titles missing" and "account genuinely has
+    none" would too.
     """
     if facts.game_account_programs:
         return 0
@@ -317,8 +320,9 @@ def build_library(
     if gated:
         logger.warning(
             "[Battlenet] %d program(s) need game-account facts we do not "
-            "have — free-to-play and subscription titles are missing from "
-            "this library (no writer for the game_accounts cache)",
+            "have yet — free-to-play and subscription titles are missing "
+            "from this library (game_accounts enrichment hasn't landed "
+            "for this sign-in — see BattlenetStore._refresh_game_accounts)",
             gated,
         )
     by_uid = _index_by_uid(installed)
