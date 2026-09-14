@@ -1,12 +1,15 @@
-# W3D Hub Store Integration — Spec (v1 design)
+# W3D Hub Store Integration — Spec (v1)
 
-> **Status:** design, not yet implemented. Written 2026-09-14 from a source-only
-> investigation of `cyberarm/w3d_hub_linux_launcher` (the open-source, unofficial Linux
-> launcher this repo's sibling nix-dendrites config already packages and runs) plus a live
-> read of an existing EmeraldEcho Steam library. See `docs/feasibility/w3d_hub.md` for the
-> research trail and verdict this spec builds on. Follows the shape of
-> `docs/ubisoft-store-spec.md` deliberately — read that first if this is your first store
-> spec in this repo.
+> **Status:** implemented 2026-09-14 (commits `2d3c52c5`, `dd4a5b3d`) — backend complete
+> (`stores/w3d_hub/`, plus the small shared-file additions in §2/§7), including WWMix patch
+> application, the one open question this spec originally deferred and then had to walk
+> back (§13). **Not yet built: the frontend login form** — everything else described below
+> is real, tested code, not a plan. Written from a source-only investigation of
+> `cyberarm/w3d_hub_linux_launcher` (the open-source, unofficial Linux launcher this repo's
+> sibling nix-dendrites config already packages and runs) plus a live read of an existing
+> EmeraldEcho Steam library. See `docs/feasibility/w3d_hub.md` for the research trail and
+> verdict this spec builds on. Follows the shape of `docs/ubisoft-store-spec.md`
+> deliberately — read that first if this is your first store spec in this repo.
 
 ---
 
