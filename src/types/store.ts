@@ -77,10 +77,11 @@ export const STORE_VISUALS: Record<StoreId, StoreVisual> = {
   w3dhub: {
     id: "w3dhub",
     display_name: "W3D Hub",
-    // Placeholder — W3D Hub's actual brand colour/logo need sourcing
-    // from an official asset before this ships; icon_path points at a
-    // file that doesn't exist yet (see docs/w3d-hub-store-spec.md).
-    brand_color: "#353535",
+    // Sampled from the official mark's glowing-sphere blue
+    // (w3dhub.com/media/images/w3dhub.webp). icon_path is vestigial like
+    // every other store's here — StoreIcon.tsx's STORE_ICONS map is what
+    // actually renders (see W3DHubIcon), not this field.
+    brand_color: "#47acce",
     icon_path: "/assets/w3dhub.svg",
   },
 };
