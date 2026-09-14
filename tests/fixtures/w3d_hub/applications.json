@@ -1,0 +1,304 @@
+{
+  "applications": [
+    {
+      "id": "launcher",
+      "category": "core-apps",
+      "name": "W3D Hub Launcher",
+      "type": "launcher",
+      "channels": [
+        {
+          "id": "stable",
+          "user-level": "public",
+          "current-version": "0.14.3.0",
+          "name": "Stable"
+        },
+        {
+          "id": "windows7",
+          "name": "Stable (Windows 7)",
+          "user-level": "public",
+          "current-version": "0.13.1.0",
+          "extended-data": {
+            "packageName": "launcher-windows7.zip"
+          }
+        },
+        {
+          "id": "release",
+          "name": "OLD RELEASE CHANNEL - PRE NET 461. DO NOT CHANGE",
+          "user-level": "public",
+          "current-version": "0.7.3.2"
+        }
+      ],
+      "extended-data": [
+        {
+          "name": "minimum-version",
+          "value": "0.11.0.2"
+        }
+      ]
+    },
+    {
+      "id": "apb",
+      "category": "games",
+      "type": "w3d-game",
+      "name": "Red Alert: A Path Beyond",
+      "channels": [
+        {
+          "id": "release",
+          "name": "Release",
+          "user-level": "public",
+          "current-version": "3.8.1.0"
+        },
+        {
+          "id": "214",
+          "name": "Gamma 2.1.4 (2014)",
+          "user-level": "public",
+          "current-version": "2.1.4.7"
+        },
+        {
+          "id": "121",
+          "name": "Beta 1.2 (2007)",
+          "user-level": "public",
+          "current-version": "1.2.1.12"
+        },
+        {
+          "id": "9935",
+          "name": "Alpha 0.9935",
+          "user-level": "public",
+          "current-version": "0.9935.1.0"
+        }
+      ],
+      "extended-data": [
+        {
+          "name": "colour",
+          "value": "#353535"
+        },
+        {
+          "name": "usesEngineCfg",
+          "value": "true"
+        }
+      ],
+      "web-links": [
+        {
+          "name": "Modifications",
+          "uri": "https://w3dhub.com/forum/files/category/3-red-alert-a-path-beyond/"
+        },
+        {
+          "name": "Bug Tracker",
+          "uri": "https://w3dhub.com/forum/bugtracker/apb/"
+        },
+        {
+          "name": "Player Statistics",
+          "uri": "https://w3dhub.com/ranks/apb/"
+        }
+      ]
+    },
+    {
+      "id": "ar",
+      "category": "games",
+      "type": "w3d-game",
+      "name": "Red Alert 2: Apocalypse Rising",
+      "channels": [
+        {
+          "id": "release",
+          "name": "Release",
+          "user-level": "public",
+          "current-version": "0.9.0.13"
+        },
+        {
+          "id": "testing",
+          "name": "Open Testing",
+          "user-level": "public",
+          "current-version": "0.9.0.11"
+        }
+      ],
+      "extended-data": [
+        {
+          "name": "colour",
+          "value": "#6e0000"
+        },
+        {
+          "name": "usesEngineCfg",
+          "value": "true"
+        }
+      ],
+      "web-links": [
+        {
+          "name": "Bug Tracker",
+          "uri": "https://w3dhub.com/forum/bugtracker/ar/"
+        }
+      ]
+    },
+    {
+      "id": "ecw",
+      "category": "games",
+      "type": "w3d-game-ecw",
+      "name": "Expansive Civilian Warfare",
+      "channels": [
+        {
+          "id": "release",
+          "name": "Modern Client",
+          "user-level": "public",
+          "current-version": "1.0.1.5"
+        },
+        {
+          "id": "original",
+          "name": "Original Release",
+          "user-level": "public",
+          "current-version": "1.2.3.5"
+        }
+      ],
+      "extended-data": [
+        {
+          "name": "colour",
+          "value": "#3E5C87"
+        },
+        {
+          "name": "serverchannel",
+          "value": "release"
+        }
+      ],
+      "web-links": [
+        {
+          "name": "Player Statistics",
+          "uri": "http://jeradsnetwork.midcoip.net:10025/StatsWebsite"
+        }
+      ]
+    },
+    {
+      "id": "ia",
+      "category": "games",
+      "type": "w3d-game",
+      "name": "Interim Apex",
+      "channels": [
+        {
+          "id": "release",
+          "name": "Release",
+          "user-level": "public",
+          "current-version": "1.0.4.1"
+        }
+      ],
+      "extended-data": [
+        {
+          "name": "colour",
+          "value": "#034866"
+        },
+        {
+          "name": "usesRenFolder",
+          "value": "true"
+        }
+      ],
+      "web-links": []
+    },
+    {
+      "id": "ren",
+      "category": "games",
+      "type": "w3d-game",
+      "name": "C&C Renegade",
+      "channels": [
+        {
+          "id": "release",
+          "name": "Release",
+          "user-level": "public",
+          "current-version": "1.0.0.0"
+        }
+      ],
+      "extended-data": [
+        {
+          "name": "colour",
+          "value": "#b03f25"
+        },
+        {
+          "name": "usesEngineCfg",
+          "value": "false"
+        },
+        {
+          "name": "application.isservicable",
+          "value": "false"
+        },
+        {
+          "name": "channel.import.exefilename",
+          "value": "game.exe"
+        }
+      ],
+      "web-links": [
+        {
+          "name": "> GET SCRIPTS 4.8 <",
+          "uri": "https://www.tiberiantechnologies.org/downloads"
+        },
+        {
+          "name": "Renegade News",
+          "uri": "https://w3dhub.com/forum/forum/145-community-news/"
+        }
+      ]
+    },
+    {
+      "id": "tsr",
+      "category": "games",
+      "type": "w3d-game",
+      "name": "Tiberian Sun: Reborn",
+      "channels": [
+        {
+          "id": "release",
+          "name": "Release",
+          "user-level": "public",
+          "current-version": "2.1.0.2"
+        },
+        {
+          "id": "reborn-2003",
+          "name": "Reborn 2003",
+          "user-level": "public",
+          "current-version": "0.5.1.0"
+        }
+      ],
+      "extended-data": [
+        {
+          "name": "colour",
+          "value": "#497331"
+        },
+        {
+          "name": "usesEngineCfg",
+          "value": "true"
+        }
+      ],
+      "web-links": [
+        {
+          "name": "Discord",
+          "uri": "https://discord.gg/EZBKdh4T84"
+        },
+        {
+          "name": "Modifications",
+          "uri": "https://w3dhub.com/forum/files/category/12-tiberian-sun-reborn/"
+        }
+      ]
+    },
+    {
+      "id": "woa",
+      "category": "games",
+      "type": "w3d-game",
+      "name": "Battle for Dune: War of Assassins",
+      "channels": [
+        {
+          "id": "release",
+          "name": "Release",
+          "user-level": "public",
+          "current-version": "1.0.1.3"
+        }
+      ],
+      "extended-data": [
+        {
+          "name": "colour",
+          "value": "#9a6e2b"
+        },
+        {
+          "name": "usesEngineCfg",
+          "value": "true"
+        }
+      ],
+      "web-links": [
+        {
+          "name": "Bug Tracker",
+          "uri": "https://w3dhub.com/forum/bugtracker/woa/"
+        }
+      ]
+    }
+  ]
+}

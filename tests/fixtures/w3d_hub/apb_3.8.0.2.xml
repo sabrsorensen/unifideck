@@ -1,0 +1,115 @@
+<BHP_Game_Manifest game="apb" version="3.8.0.2" type="Patch" baseVersion="3.8.0.1">
+  <File name="game.exe" checksum="AB4F1D3BF1FE3489CEC443C54B9396E5B9A3121A9FD53EA54E32D99AE48A134E" package="binaries" />
+  <File name="MemoryManager.dll" checksum="C3AA2DE10AFBC6A29EDB419DD68D5E4CD576EA39F1CD80A6E6C06BBAE6873307" package="binaries" />
+  <File name="scripts.dll" checksum="C11BC6EE9E3C5A1A3826C99F6C9425EBD333BE99D66CC9A6F9837AD52099D4B4" package="binaries" />
+  <File name="shared.dll" checksum="DEF88056CC628C88AFF9C2427A795C3BEAA2CF8C3E00C1FA66D74E6BD305CC33" package="binaries" />
+  <File name="ttversion.txt" checksum="77378C23D800951C99AC7EE16CBC661115EC6AA4E21EDF75C3083FA2150E9876" package="misc" />
+  <File name="wwconfig.exe" checksum="B2D7D011F7CB7755665AB5C5697B0CDEE88B6FA1ED087EF136BBA7CA36C2633D" package="binaries" />
+  <File name="data/Always.dat" checksum="4D8B6E44BE68DA6FB5002199B4ED46CBDCD689E31D35AF62984E022B050A8B82">
+    <Patch from="3.8.0.1" package="Always.patch.3.8.0.1" />
+  </File>
+  <File name="data/Always_Buildings.dat" checksum="EB80F12FFE44B4775F36666CA919F489C1B525A0DF54F1BC1F63170F8C6EBDBA">
+    <Patch from="3.8.0.0" package="Always_Buildings.patch.3.8.0.0" />
+  </File>
+  <File name="data/Always_Environment.dat" checksum="5A11F52A887DEC989B4AB396B39A1C937317C9983310A7A67F4520A4D1BBC8C3">
+    <Patch from="3.8.0.0" package="Always_Environment.patch.3.8.0.0" />
+  </File>
+  <File name="data/Always_Textures.dat" checksum="F72FBC9062AF32E9BF73100B74287A07603AA4BCBCBE13C107A51124910EAA93">
+    <Patch from="3.8.0.0" package="Always_Textures.patch.3.8.0.0" />
+  </File>
+  <File name="data/Always_UI.dat" checksum="095E40570F38DAE9783E236085A5F786FEC774C83D7A3F55BB9DB66B3F1214EC">
+    <Patch from="3.8.0.0" package="Always_UI.patch.3.8.0.0" />
+  </File>
+  <File name="data/Always_Vehicles.dat" checksum="7DC98F2861E672363AD41194E1EB06C3FC7E8C96D461F285C54935B5822A2261">
+    <Patch from="3.8.0.0" package="Always_Vehicles.patch.3.8.0.0" />
+  </File>
+  <File name="data/RA_Antlion.mix" checksum="E2A7260EBC8C6D39C06A16C87FA596CD708BE10EC7C14F4DE765B7803B38AA4F">
+    <Patch from="3.8.0.1" package="RA_Antlion.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_AS_Seamist.mix" checksum="4835B3E0CC239EAF27223B0C8EB161AFA8034E6C54642D6D71FF7D7AAC200C73">
+    <Patch from="3.8.0.1" package="RA_AS_Seamist.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_Bonsai.mix" checksum="112EE0A7253F1D96D53156EA171F8A662EC477A984FB52893C407A6D01CBD3E5">
+    <Patch from="3.8.0.1" package="RA_Bonsai.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_CamosCanyon.mix" checksum="601FC82FEA1CC38A93CE0D05679F8C980810BC7CB29AC0259301CE722BDC1E92">
+    <Patch from="3.8.0.1" package="RA_CamosCanyon.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_CanyonRiver.mix" checksum="3CCBD8F58796E3608CFE0E700D361ABC0DBF585A200C0DF635714F5EEBD0EBD7">
+    <Patch from="3.8.0.1" package="RA_CanyonRiver.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_Christmas2020.mix" checksum="D9A323733FF3263417FC1EB33E2003468D7D3C9D42169114E070D22DF282A6CC">
+    <Patch from="3.8.0.1" package="RA_Christmas2020.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_ChristmasFissure.mix" checksum="3D736E393E224DAE9213AB5E0BD763272E3C33C550AB899B0830E56756C4D997">
+    <Patch from="3.8.0.1" package="RA_ChristmasFissure.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_CoastalInfluence.mix" checksum="9DFE5E5B0A2BE8E0A91B13F779BD446BCBE39AC4E8CFC31F10422736C6BDCCF1">
+    <Patch from="3.8.0.1" package="RA_CoastalInfluence.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_Complex.mix" checksum="616A4EECC163018B975A395F16A6897D895906A6CB09F3CEA3E9300B6E8969DC">
+    <Patch from="3.8.0.1" package="RA_Complex.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_GuardDuty.mix" checksum="A78839936B4FC1724088D5CA06C0750E970E362412D3A4174D37D4F0253580FC" package="RA_GuardDuty" />
+  <File name="data/RA_HostileWaters.mix" checksum="EB1922EEA5FE693A21CA7361590B389710B598C0AD6513D9866F05EF10746118">
+    <Patch from="3.8.0.1" package="RA_HostileWaters.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_HostileWatersParadox.mix" checksum="66456A77D675782A1F5CEBE32DD4859718C9A16C8A81ECE0653DEFD6BACA8E2E">
+    <Patch from="3.8.0.1" package="RA_HostileWatersParadox.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_KeepOffTheGrass.mix" checksum="F6976C6A9D0D3C02DCB76C54B23222C92C86D8AF9167DD935772CBDC1F3B48CF">
+    <Patch from="3.8.0.1" package="RA_KeepOffTheGrass.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_LunarParadox.mix" checksum="DF74B91071DF36B8C818D74853C54025DDA0573833AB8824F4FFF358F005BAA5">
+    <Patch from="3.8.0.1" package="RA_LunarParadox.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_Metro.mix" checksum="568A7FE239BC728C28C585CE8F82419D9ECDD4CC1882B9E51D4A1B748B8A4A39">
+    <Patch from="3.8.0.1" package="RA_Metro.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_NorthByNorthwest.mix" checksum="30E57B0235D1C88FAEF727306B81D79B9F954F9732500C197CA5A50D1C950780">
+    <Patch from="3.8.0.1" package="RA_NorthByNorthwest.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_PacificThreat.mix" checksum="45123FD40FBF7BF551BA2D6E1CE4061C383C030D1ABDCFA10B89BC1230A27378">
+    <Patch from="3.8.0.1" package="RA_PacificThreat.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_Pipeline.mix" checksum="044988D0006FC913E78FDB89A8EDB8443EEB741FDEC0A386821C2DCC719D6C25">
+    <Patch from="3.8.0.1" package="RA_Pipeline.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_RidgeWar.mix" checksum="FF6B5089D905FAD128087A8478CBF251DBE8075492D081237B542D7B435BE499">
+    <Patch from="3.8.0.1" package="RA_RidgeWar.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_RiverRaid.mix" checksum="88F0501791930469C76371B0ED03BEC9AFA94BE295C177542FBD19BB77C15FC0">
+    <Patch from="3.8.0.1" package="RA_RiverRaid.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_RockTrap.mix" checksum="A5C23B2121566B3AD3FD23C1F5A041D9AEB7E49F1AB357C237510731ACEA1C4D">
+    <Patch from="3.8.0.1" package="RA_RockTrap.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_ShallowGrave.mix" checksum="71FE37557A433EDD8DA215677A88A7C7D09FFA5A0E80F908E5757B5253291CBA">
+    <Patch from="3.8.0.1" package="RA_ShallowGrave.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_Siege.mix" checksum="CB3EA84F7732EBE8F241E1E67D13898B2FF7BD6BE6D2CAC258AF3C1424C5FA54">
+    <Patch from="3.8.0.1" package="RA_Siege.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_StormyValley.mix" checksum="F431730329E4801376610D1B55B727043F95303DC6AF2A13C7857908F740A0CD">
+    <Patch from="3.8.0.1" package="RA_StormyValley.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_TestUnits.mix" checksum="C52AD9A2B0480DE69388ADA811DB99D8F8BBC398043C604073B502C55E6CE1B8">
+    <Patch from="3.8.0.1" package="RA_TestUnits.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_TheWoodsToday.mix" checksum="63107E210A418F72DF3A088ACFEBF9D216B11087F5D88636932311C6D7B59F12">
+    <Patch from="3.8.0.1" package="RA_TheWoodsToday.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_ToTheCore.mix" checksum="29F0988DA479DFC28D0C82E94E121F828FB392B626FDCA669A4182E14849FA0D">
+    <Patch from="3.8.0.1" package="RA_ToTheCore.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_Under.mix" checksum="075B9467AAE041526CCFE876EF917C2348A0E2779A8AEE1813D03AB161EE27B6">
+    <Patch from="3.8.0.1" package="RA_Under.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_Volcano.mix" checksum="5806C28706165021E5A80F5182526F4891DA613B8AD91341F5E7BD89906E63E9" package="RA_Volcano" />
+  <File name="data/RA_Wasteland.mix" checksum="D85C490185464D9AF19B6D570E201C82EF15A58A2A23B65B6A3D907A087BB960">
+    <Patch from="3.8.0.1" package="RA_Wasteland.patch.3.8.0.1" />
+  </File>
+  <File name="data/RA_Zama.mix" checksum="B43EDD04E7E49F382618B5046E0226D5A8DBEC943415D66505F1B62AB600B568">
+    <Patch from="3.8.0.1" package="RA_Zama.patch.3.8.0.1" />
+  </File>
+</BHP_Game_Manifest>

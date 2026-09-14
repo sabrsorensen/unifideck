@@ -55,7 +55,7 @@ W3D Hub-specific code **outside** the package:
 
 | Path | Responsibility |
 | ---- | -------------- |
-| `launcher/proton/handlers/w3d_hub.py` | Launch handler: resolve exe from the install marker, resolve the (constant) shared prefix path, build `-launcher +connect ... +netplayername ...`, run via `run_umu_with_retry` |
+| `launcher/proton/infrastructure/core.py` | Add one `_w3d_hub_prefix_path(ctx)` branch to `_resolve_prefix` — the constant shared path (§3). **No new handler file needed** — see §7: `generic.py`'s existing `_raw_exe_launch` (the `else` branch of `generic_launch`) already does exactly what a W3D Hub launch needs. |
 | Frontend login form | **New UI surface** — every existing store signs in via OAuth-in-Edge or a vendor-GUI shortcut; this is the first plain username/password form. No existing component to reuse as-is. |
 
 ---
@@ -240,26 +240,46 @@ already done before the first install ever runs.
 
 ## 7. Launch Flow
 
-`launcher/proton/handlers/w3d_hub.py :: w3d_hub_launch(plan)`:
+**No new launch-handler file — reuse `generic.py`'s existing dispatch.** Checked
+`generic_launch` fully: it branches on `plan.context.store` for GOG (`_gog_launch`,
+orchestrator with its own redistributable setup) and Amazon (`_amazon_launch`, reads
+`fuel.json` launch args), and **falls through to `_raw_exe_launch` for everything else**
+— which is exactly `python_bin umu_wrapper exe_path <plan.state.game_args>` via
+`run_umu_with_retry`. W3D Hub has no vendor-orchestrator step and no `fuel.json`
+equivalent, so the existing `else` branch already does the whole job. This also settles a
+question the original draft of this spec hadn't asked yet: W3D Hub should **not** join
+`launcher.wrapper_stores.WRAPPER_STORES` (`{"ubisoft", "battlenet"}`) — that set (and its
+`client_runs_in_prefix` flag) exists for stores with an actual vendor client resident in
+the prefix, which W3D Hub doesn't have; it's shaped like a GOG/Amazon Windows title that
+happens to share one prefix across games, not like a wrapper store.
 
-1. **Resolve the exe path** from the local install marker (`w3dhub_installed.json`) for
-   the `app_id`/`channel` — never reconstructed from the id, same discipline
-   `paths.py`-style modules in every other store already follow.
-2. **Resolve the prefix path** — the one constant shared path (§3), not derived per-game.
-3. **Build launch args**: `-launcher +connect <ip>:<port> +netplayername <nickname>`,
-   matching `ApplicationManager#run`/`#join_server` exactly (confirmed live against
-   EmeraldEcho's own working non-Steam shortcuts, see `docs/feasibility/w3d_hub.md`).
-   `<nickname>` is a free-text local setting (`server_list_username` in the reference,
-   **not** bound to the W3D Hub account) — prompt once, persist, same shape as the
-   reference's own first-use prompt.
-4. **Server selection, v1**: omit `+connect` entirely and let the game's own menu/server
-   browser handle it, unless/until the GSH server-list API (`gsh.w3d.cyberarm.dev` —
-   `/listings/getAll/v2`, `/listings/getStatus/v2/:id`, both unauthenticated JSON) is
-   wired up as a real in-Unifideck picker. Hardcoding one server address (what the
-   EmeraldEcho manual shortcuts do) isn't something to ship generally.
-5. **Run** via `run_umu_with_retry`/`ProtonLaunchPlan`, same as every other store — the
-   only difference from Ubisoft/Battle.net's handlers is that `prefix_path` here is a
-   constant, not a per-`game_id` lookup.
+What *is* new:
+
+1. **One `_resolve_prefix` branch** in `launcher/proton/infrastructure/core.py` — a
+   `_w3d_hub_prefix_path()` returning the constant shared path (§3), alongside the
+   existing `_ubisoft_prefix_path`/`_battlenet_prefix_path` functions (which derive a
+   path per `game_id`; this one doesn't need `ctx` at all).
+2. **`-launcher [+connect <ip>:<port> +netplayername <nickname>]` baked into the Steam
+   shortcut's `LaunchOptions` at shortcut creation/update time**, not constructed at
+   launch time — Steam's own `%command%` parsing (`launcher/types/options.py`) is what
+   populates `plan.state.game_args`, and that's a **static field on the shortcut itself**,
+   the same mechanism the EmeraldEcho manual shortcuts already use directly. So
+   `ShortcutService`'s W3D Hub entry point (mirroring how other stores keep their
+   shortcuts' launch options current) is where the connect args actually get set, not
+   the launch handler. `<nickname>` is a free-text local setting (`server_list_username`
+   in the reference, **not** bound to the W3D Hub account) — prompt once, persist, same
+   shape as the reference's own first-use prompt.
+3. **Server selection, v1**: omit `+connect` entirely (empty/`-launcher`-only
+   `LaunchOptions`) and let the game's own menu/server browser handle it, unless/until the
+   GSH server-list API (`gsh.w3d.cyberarm.dev` — `/listings/getAll/v2`,
+   `/listings/getStatus/v2/:id`, both unauthenticated JSON, confirmed live) is wired up as
+   a real in-Unifideck picker that rewrites `LaunchOptions` when the user picks a
+   favorite. Hardcoding one server address (what the EmeraldEcho manual shortcuts do)
+   isn't something to ship generally.
+4. **Exe path resolution** — from the local install marker (`w3dhub_installed.json`) for
+   the `app_id`/`channel`, never reconstructed from the id, same discipline `paths.py`-
+   style modules in every other store already follow. This is what `LaunchContext`
+   construction needs to resolve before `generic_launch` ever runs.
 
 ---
 
