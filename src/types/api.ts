@@ -227,7 +227,8 @@ export type StoreId =
   | "microsoft"
   | "ubisoft"
   | "battlenet"
-  | "gamevault";
+  | "gamevault"
+  | "w3dhub";
 
 /**
  * Per-store availability + auth state, returned by

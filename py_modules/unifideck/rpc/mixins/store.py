@@ -135,7 +135,7 @@ class StoreRPCMixin:
 
         There is deliberately **no install-location argument**. Every install
         already goes through the shared storage picker, which knows about SD
-        cards and USB drives and applies to all seven stores; a per-store
+        cards and USB drives and applies to all eight stores; a per-store
         copy of that setting would be a second answer to a question already
         answered, and the two would disagree the first time one was changed.
 
@@ -156,6 +156,35 @@ class StoreRPCMixin:
         )
         logger.info(
             "[StoreAuth:gamevault] connect local success=%s error=%s",
+            getattr(result, "success", None),
+            getattr(result, "error", None),
+        )
+        return result
+
+    async def connect_w3dhub(self, username: str, password: str) -> Any:
+        """Sign in to W3D Hub with a plain username/password.
+
+        A route of its own for the same reason ``connect_gamevault`` is:
+        ``store_auth`` takes ``(store, action)`` and nothing else, on
+        purpose (see that method's docstring). W3D Hub is the second
+        connector whose sign-in is a credentials form rather than a
+        browser OAuth or a Steam auth shortcut — there is no vendor
+        client, so there is no shortcut to launch and no redirect to
+        watch for (docs/w3d-hub-store-spec.md §4).
+
+        Args:
+            username: W3D Hub forum account username.
+            password: W3D Hub forum account password. Never logged.
+
+        Returns:
+            ``AuthResult`` — ``success`` plus ``error`` when it failed.
+        """
+        logger.info("[StoreAuth:w3dhub] connect user=%s", username)
+        result = await self.registry.auth_action(
+            "w3dhub", "start", username=username, password=password,
+        )
+        logger.info(
+            "[StoreAuth:w3dhub] connect success=%s error=%s",
             getattr(result, "success", None),
             getattr(result, "error", None),
         )

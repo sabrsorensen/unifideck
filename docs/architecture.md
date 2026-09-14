@@ -49,7 +49,7 @@ The machine-enforced invariants are in §9 (`.importlinter`).
 ├─────────────────────────────────────────────────┤
 │  Layer 5 — Services (services/)                 │  ← Infrastructure services
 ├─────────────────────────────────────────────────┤
-│  Layer 4 — Stores (stores/)                     │  ← 7 store connectors
+│  Layer 4 — Stores (stores/)                     │  ← 8 store connectors
 ├─────────────────────────────────────────────────┤
 │  Layer 3 — StoreBase (stores/shared/)           │  ← Abstract store contract
 ├─────────────────────────────────────────────────┤
@@ -123,7 +123,7 @@ owned by `launcher/dispatcher.py`.
 
 ### Layer 4 — `stores/`
 
-Seven store connector sub-packages. Each is self-contained with its own auth, library, install, and update logic.
+Eight store connector sub-packages. Each is self-contained with its own auth, library, install, and update logic.
 
 | Package             | Store                   | Backend                              |
 | ------------------- | ----------------------- | ------------------------------------ |

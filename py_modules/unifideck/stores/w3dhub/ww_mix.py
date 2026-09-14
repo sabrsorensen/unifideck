@@ -1,6 +1,6 @@
 """ww_mix.py — WWMix (MIX1/MIX2) container reader/writer + patch application.
 
-py_modules/unifideck/stores/w3d_hub/ww_mix.py
+py_modules/unifideck/stores/w3dhub/ww_mix.py
 
 Westwood's classic MIX archive format, as W3D Hub still uses it: a
 header (magic + three int32 offsets), an entry table (CRC32-of-uppercased-

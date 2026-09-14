@@ -1,6 +1,6 @@
 """W3D Hub store — the ``StoreBase`` implementation.
 
-py_modules/unifideck/stores/w3d_hub/store.py
+py_modules/unifideck/stores/w3dhub/store.py
 
 No vendor client at all — the backend is a plain JSON/HTTPS API, so
 Unifideck is its own client: this store owns auth (a plain username/
@@ -53,8 +53,13 @@ logger = logging.getLogger(__name__)
 class W3DHubStore(StoreBase):
     """W3D Hub — own API client, own downloader, shared Proton prefix."""
 
+    # ``name`` is a literal, not ``STORE_NAME``: check 3 in
+    # ``scripts/validate_architecture.py`` reads this value statically and
+    # matches it against the directory name, and it cannot resolve a
+    # constant reference (same reason GameVaultStore's store_info docstring
+    # gives).
     store_info = StoreInfo(
-        name=STORE_NAME,
+        name="w3dhub",
         display_name="W3D Hub",
         auth_method="manual",
         icon_asset="w3dhub.png",

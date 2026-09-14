@@ -14,7 +14,7 @@ import struct
 
 import pytest
 
-from unifideck.stores.w3d_hub.ww_mix import (
+from unifideck.stores.w3dhub.ww_mix import (
     MIX1_HEADER,
     MIX2_HEADER,
     MixEntry,

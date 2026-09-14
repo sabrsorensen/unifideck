@@ -58,7 +58,7 @@ MANUAL_FIXES: dict[str, GameFix] = {
         source="manual",
     ),
 }
-# ── W3D Hub (all titles share one prefix — see stores/w3d_hub) ────
+# ── W3D Hub (all titles share one prefix — see stores/w3dhub) ────
 # Every W3D Hub title shares one Proton prefix (docs/w3d-hub-store-spec.md
 # §3 — no vendor client whose update churn per-game isolation defends
 # against, and every title needs the identical redistributable set), so
@@ -84,7 +84,7 @@ _W3D_HUB_WINETRICKS: list[str] = [
 for _w3d_hub_id in ("apb", "ar", "ecw", "ia", "tsr", "woa"):
     MANUAL_FIXES[f"{_w3d_hub_id}-release"] = GameFix(
         winetricks=_W3D_HUB_WINETRICKS,
-        notes="W3D Hub — shared prefix, see stores/w3d_hub",
+        notes="W3D Hub — shared prefix, see stores/w3dhub",
         source="manual",
     )
 del _w3d_hub_id

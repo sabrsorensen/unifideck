@@ -1,6 +1,6 @@
 """catalog.py — the W3D Hub application catalog, cached.
 
-py_modules/unifideck/stores/w3d_hub/catalog.py
+py_modules/unifideck/stores/w3dhub/catalog.py
 
 ``get-applications`` on its own answers unauthenticated (confirmed live
 2026-09-14 — see ``docs/w3d-hub-store-spec.md`` §13), so this is simpler

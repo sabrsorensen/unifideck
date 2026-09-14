@@ -542,7 +542,8 @@
     "ubisoft": "Ubisoft",
     "microsoft": "Microsoft",
     "battlenet": "Battle.net",
-    "gamevault": "GameVault"
+    "gamevault": "GameVault",
+    "w3dhub": "W3D Hub"
   },
   "unifiedLibrary": {
     "error": "Unifideck Error",
@@ -1081,5 +1082,17 @@
     "errorUsernameRequired": "Please enter your username",
     "errorPasswordRequired": "Please enter your password",
     "errorConnection": "Failed to connect to GameVault server"
+  },
+  "w3dhub": {
+    "loginTitle": "Log in to W3D Hub",
+    "loginDescription": "Login using your W3D Hub forum account.",
+    "logIn": "Log In",
+    "loggingIn": "Logging in…",
+    "cancel": "Cancel",
+    "username": "Username",
+    "password": "Password",
+    "errorUsernameRequired": "Please enter your username",
+    "errorPasswordRequired": "Please enter your password",
+    "errorLogin": "Incorrect username or password, or too many failed attempts — try again in a few minutes."
   }
 }

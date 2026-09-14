@@ -1,10 +1,12 @@
 """Frozen configuration for the W3D Hub store.
 
-py_modules/unifideck/stores/w3d_hub/config.py
+py_modules/unifideck/stores/w3dhub/config.py
 
-Follows the Ubisoft/Battle.net ``_FIELD_SPECS`` pattern (see
-``stores/battlenet/config.py``'s docstring) — every key declared once with
-its type and default, coercion + per-key fallback from ``from_mapping``.
+Follows the Battle.net ``_FIELD_SPECS`` pattern — every key declared once
+with its type and default; the coercion itself is shared with Battle.net's
+config via ``stores/shared/field_specs_config.py`` (see that module's
+docstring for why this is a distinct thing from Ubisoft's own, differently
+-shaped ``_FIELD_SPECS``).
 
 ``prefix_dir`` is deliberately a single path, not a per-game template —
 see ``docs/w3d-hub-store-spec.md`` §3: every W3D Hub title shares one
@@ -20,6 +22,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Any
+
+from unifideck.stores.shared.field_specs_config import (
+    field_specs_from_config_manager as _shared_from_config_manager,
+)
+from unifideck.stores.shared.field_specs_config import (
+    field_specs_from_mapping as _shared_from_mapping,
+)
 
 # name -> (config key, default). The config key is relative to
 # ``stores.w3dhub`` in the merged config.
@@ -77,44 +86,14 @@ class W3DHubConfig:
         return self.data_dir_path / "w3dhub_session.json"
 
 
-def _coerce(value: Any, default: Any) -> Any:
-    """Coerce a config value to the default's type, falling back on failure."""
-    if value is None:
-        return default
-    if isinstance(default, bool):
-        if isinstance(value, bool):
-            return value
-        return str(value).strip().lower() in {"1", "true", "yes", "on"}
-    if isinstance(default, int):
-        try:
-            return int(value)
-        except (TypeError, ValueError):
-            return default
-    return str(value) if value != "" else default
-
-
 def from_mapping(raw: dict[str, Any] | None) -> W3DHubConfig:
     """Build a config from a plain mapping. Unknown keys are ignored."""
-    source = raw or {}
-    kwargs = {
-        name: _coerce(source.get(key), default)
-        for name, (key, default) in _FIELD_SPECS.items()
-    }
-    return W3DHubConfig(**kwargs)
+    return _shared_from_mapping(raw, _FIELD_SPECS, W3DHubConfig)
 
 
 def from_config_manager(config: Any) -> W3DHubConfig:
     """Build a config from the plugin's ConfigManager, tolerating absence."""
-    if config is None:
-        return W3DHubConfig()
-    getter = getattr(config, "get", None)
-    if not callable(getter):
-        return W3DHubConfig()
-    try:
-        raw = getter("stores.w3dhub", {})
-    except Exception:  # config must never break store construction
-        return W3DHubConfig()
-    return from_mapping(raw if isinstance(raw, dict) else {})
+    return _shared_from_config_manager(config, "stores.w3dhub", _FIELD_SPECS, W3DHubConfig)
 
 
 FIELD_DEFAULTS: dict[str, Any] = {

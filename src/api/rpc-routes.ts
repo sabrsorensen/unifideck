@@ -18,6 +18,7 @@ export const rpcRoutes = {
   storeAuth: "store_auth",
   connectGamevault: "connect_gamevault",
   connectGamevaultLocal: "connect_gamevault_local",
+  connectW3dhub: "connect_w3dhub",
   checkStoreStatus: "check_store_status",
   getStoreInfos: "get_store_infos",
   clearStoreAuths: "clear_store_auths",

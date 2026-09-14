@@ -1,7 +1,7 @@
 # W3D Hub Store Integration — Spec (v1)
 
 > **Status:** implemented 2026-09-14 (commits `2d3c52c5`, `dd4a5b3d`) — backend complete
-> (`stores/w3d_hub/`, plus the small shared-file additions in §2/§7), including WWMix patch
+> (`stores/w3dhub/`, plus the small shared-file additions in §2/§7), including WWMix patch
 > application, the one open question this spec originally deferred and then had to walk
 > back (§13). **Not yet built: the frontend login form** — everything else described below
 > is real, tested code, not a plan. Written from a source-only investigation of
@@ -40,7 +40,7 @@ per-game prefix. See §3.
 
 ## 2. Package Layout
 
-All paths under `py_modules/unifideck/stores/w3d_hub/` (proposed).
+All paths under `py_modules/unifideck/stores/w3dhub/` (proposed).
 
 | Module | Responsibility |
 | ------ | -------------- |

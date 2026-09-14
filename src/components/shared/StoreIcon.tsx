@@ -34,6 +34,11 @@ const STORE_ICONS: Record<StoreId, StoreGlyph> = {
   ubisoft: SiUbisoft,
   battlenet: SiBattledotnet,
   gamevault: GameVaultIcon,
+  // No W3D Hub glyph in react-icons/si (an indie community project, not
+  // a simple-icons-listed brand) and no custom icon component sourced
+  // yet either — same brand-asset gap types/store.ts's icon_path flags.
+  // Explicit fallback rather than letting it silently miss the map.
+  w3dhub: FaGamepad,
 };
 
 interface Props {

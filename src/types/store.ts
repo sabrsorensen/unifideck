@@ -74,4 +74,13 @@ export const STORE_VISUALS: Record<StoreId, StoreVisual> = {
     brand_color: "#1a9c3e",
     icon_path: "/assets/gamevault.svg",
   },
+  w3dhub: {
+    id: "w3dhub",
+    display_name: "W3D Hub",
+    // Placeholder — W3D Hub's actual brand colour/logo need sourcing
+    // from an official asset before this ships; icon_path points at a
+    // file that doesn't exist yet (see docs/w3d-hub-store-spec.md).
+    brand_color: "#353535",
+    icon_path: "/assets/w3dhub.svg",
+  },
 };

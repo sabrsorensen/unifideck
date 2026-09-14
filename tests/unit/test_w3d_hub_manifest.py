@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from unifideck.stores.w3d_hub.manifest import (
+from unifideck.stores.w3dhub.manifest import (
     build_install_plan,
     build_package_refs,
     parse_manifest_xml,

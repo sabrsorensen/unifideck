@@ -1,6 +1,6 @@
 """installed_state.py — the local install-state marker.
 
-py_modules/unifideck/stores/w3d_hub/installed_state.py
+py_modules/unifideck/stores/w3dhub/installed_state.py
 
 There is no vendor-client catalog to read for install/ownership state
 (unlike Ubisoft's ``ubisoft_id_map.json``, which bridges IDs across

@@ -4,7 +4,11 @@ py_modules/unifideck/stores/battlenet/config.py
 
 Follows the Ubisoft ``_FIELD_SPECS`` pattern: every key is declared once
 with its type and default, so ``from_config_manager`` gets coercion and
-per-key fallback for free rather than scattering ``get_cfg`` calls.
+per-key fallback for free rather than scattering ``get_cfg`` calls. The
+coercion itself is shared with W3D Hub's config via
+``stores/shared/field_specs_config.py`` (promoted when the two became
+byte-identical — see that module's docstring for why Ubisoft's own,
+differently-shaped ``_FIELD_SPECS`` is deliberately not part of this).
 
 Most of these are paths *inside a Wine prefix* that shift when the client
 changes layout, so they must be tunable without shipping a release. The
@@ -20,6 +24,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Any
+
+from unifideck.stores.shared.field_specs_config import (
+    field_specs_from_config_manager as _shared_from_config_manager,
+)
+from unifideck.stores.shared.field_specs_config import (
+    field_specs_from_mapping as _shared_from_mapping,
+)
 
 # name -> (config key, default). The config key is relative to
 # ``stores.battlenet`` in the merged config.
@@ -88,44 +99,14 @@ class BattlenetConfig:
         return self.data_dir_path / ID_MAP_FILENAME
 
 
-def _coerce(value: Any, default: Any) -> Any:
-    """Coerce a config value to the default's type, falling back on failure."""
-    if value is None:
-        return default
-    if isinstance(default, bool):
-        if isinstance(value, bool):
-            return value
-        return str(value).strip().lower() in {"1", "true", "yes", "on"}
-    if isinstance(default, int):
-        try:
-            return int(value)
-        except (TypeError, ValueError):
-            return default
-    return str(value) if value != "" else default
-
-
 def from_mapping(raw: dict[str, Any] | None) -> BattlenetConfig:
     """Build a config from a plain mapping. Unknown keys are ignored."""
-    source = raw or {}
-    kwargs = {
-        name: _coerce(source.get(key), default)
-        for name, (key, default) in _FIELD_SPECS.items()
-    }
-    return BattlenetConfig(**kwargs)
+    return _shared_from_mapping(raw, _FIELD_SPECS, BattlenetConfig)
 
 
 def from_config_manager(config: Any) -> BattlenetConfig:
     """Build a config from the plugin's ConfigManager, tolerating absence."""
-    if config is None:
-        return BattlenetConfig()
-    getter = getattr(config, "get", None)
-    if not callable(getter):
-        return BattlenetConfig()
-    try:
-        raw = getter("stores.battlenet", {})
-    except Exception:  # config must never break store construction
-        return BattlenetConfig()
-    return from_mapping(raw if isinstance(raw, dict) else {})
+    return _shared_from_config_manager(config, "stores.battlenet", _FIELD_SPECS, BattlenetConfig)
 
 
 # Guards the scar noted in the module docstring.

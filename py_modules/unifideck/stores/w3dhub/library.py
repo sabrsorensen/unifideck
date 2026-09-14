@@ -1,6 +1,6 @@
 """library.py — join the catalog and local install state into Games.
 
-py_modules/unifideck/stores/w3d_hub/library.py
+py_modules/unifideck/stores/w3dhub/library.py
 
 Unlike every other store, there is no vendor-client catalog to read for
 install/ownership state — see ``docs/w3d-hub-store-spec.md`` §5.

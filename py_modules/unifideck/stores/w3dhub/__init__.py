@@ -1,6 +1,6 @@
 """W3D Hub store sub-package — public entry point.
 
-py_modules/unifideck/stores/w3d_hub/__init__.py
+py_modules/unifideck/stores/w3dhub/__init__.py
 
 No vendor client — Unifideck is its own API client, downloader, and
 installer against W3D Hub's plain JSON/HTTPS backend. Discovered by

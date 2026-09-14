@@ -1,6 +1,6 @@
 """installer.py — download, extract, patch-apply, and record one install.
 
-py_modules/unifideck/stores/w3d_hub/installer.py
+py_modules/unifideck/stores/w3dhub/installer.py
 
 Orchestrates ``manifest.py`` (what to fetch and in what order) + ``api.py``
 (fetch it) + ``ww_mix.py`` (apply the patch-type entries) into one

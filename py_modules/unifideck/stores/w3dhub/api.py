@@ -1,6 +1,6 @@
 """api.py — thin HTTP client for the W3D Hub launcher API.
 
-py_modules/unifideck/stores/w3d_hub/api.py
+py_modules/unifideck/stores/w3dhub/api.py
 
 W3D Hub has no vendor client and no official API docs. This mirrors the
 documented request/response shapes in ``cyberarm/w3d_hub_linux_launcher``'s

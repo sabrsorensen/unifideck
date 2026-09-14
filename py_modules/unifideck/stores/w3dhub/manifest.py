@@ -1,6 +1,6 @@
 """manifest.py — W3D Hub install manifests: parsing and the install plan.
 
-py_modules/unifideck/stores/w3d_hub/manifest.py
+py_modules/unifideck/stores/w3dhub/manifest.py
 
 A manifest is an XML document (``BHP_Game_Manifest``) describing one
 app/channel/version's file set. Ported from
