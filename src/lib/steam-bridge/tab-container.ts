@@ -28,6 +28,14 @@ export interface UnifideckTab {
   position: number;
   filters: TabFilter[];
   icon?: string;
+  /**
+   * Skip this tab when auto-generating a `[Unifideck]` Steam Collection
+   * (see `collection-manager.ts`). Set on tabs that already have a native
+   * Steam equivalent (All Games, Installed, the device-compat tab,
+   * Non-Steam) — a per-store tab has no such equivalent, so it stays
+   * un-set there.
+   */
+  skipCollection?: boolean;
 }
 
 export function getUnifideckTabs(): UnifideckTab[] {
@@ -40,18 +48,21 @@ export function getUnifideckTabs(): UnifideckTab[] {
       title: t(compatTabTitleKey()),
       position: 0,
       filters: [{ type: "deckCompat", params: {} }],
+      skipCollection: true,
     },
     {
       id: "unifideck-all",
       title: t("deckTabs.allGames"),
       position: 1,
       filters: [{ type: "all", params: {} }],
+      skipCollection: true,
     },
     {
       id: "unifideck-installed",
       title: t("deckTabs.installed"),
       position: 2,
       filters: [{ type: "installed", params: { installed: true } }],
+      skipCollection: true,
     },
     {
       id: "unifideck-steam",
@@ -114,6 +125,7 @@ export function getUnifideckTabs(): UnifideckTab[] {
       title: t("deckTabs.nonSteam"),
       position: 12,
       filters: [{ type: "nonSteam", params: {} }],
+      skipCollection: true,
     },
   ];
 }

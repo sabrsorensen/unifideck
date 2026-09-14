@@ -28,7 +28,7 @@ vi.mock("../device-type", () => ({
   compatTabTitleKey: () => "deckTabs.deck",
 }));
 
-import { UnifideckTabContainer, tabManager, type SteamAppFilter } from "./tab-container";
+import { UnifideckTabContainer, getUnifideckTabs, tabManager, type SteamAppFilter } from "./tab-container";
 import type { SteamAppOverview } from "../../types/steam";
 
 function makeContainer(appids: number[] = []): UnifideckTabContainer {
@@ -41,6 +41,36 @@ function makeContainer(appids: number[] = []): UnifideckTabContainer {
   container.collection.visibleApps = appids.map((appid) => ({ appid } as SteamAppOverview));
   return container;
 }
+
+describe("skipCollection tagging", () => {
+  it("marks only the tabs with a native Steam equivalent", () => {
+    const skipped = getUnifideckTabs()
+      .filter((t) => t.skipCollection)
+      .map((t) => t.id)
+      .sort();
+    expect(skipped).toEqual(
+      ["unifideck-all", "unifideck-deck", "unifideck-installed", "unifideck-nonsteam"].sort(),
+    );
+  });
+
+  it("leaves every per-store tab eligible for a collection", () => {
+    const stores = [
+      "unifideck-steam",
+      "unifideck-epic",
+      "unifideck-gog",
+      "unifideck-amazon",
+      "unifideck-ubisoft",
+      "unifideck-battlenet",
+      "unifideck-itch",
+      "unifideck-microsoft",
+      "unifideck-gamevault",
+    ];
+    const tabs = getUnifideckTabs();
+    for (const id of stores) {
+      expect(tabs.find((t) => t.id === id)?.skipCollection).toBeFalsy();
+    }
+  });
+});
 
 describe("GetAppCountWithToolsFilter guard", () => {
   it("applies a well-formed filter", () => {
