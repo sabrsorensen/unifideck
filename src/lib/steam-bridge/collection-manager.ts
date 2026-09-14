@@ -213,6 +213,12 @@ function tabName(tab: UnifideckTab): string {
   return `${COLLECTION_PREFIX}${tab.title}`;
 }
 
+/** Tabs that get a `[Unifideck]` Steam Collection — excludes tabs with a
+ *  native Steam equivalent (see `UnifideckTab.skipCollection`). */
+function collectionTabs(): UnifideckTab[] {
+  return getUnifideckTabs().filter((t) => !t.skipCollection);
+}
+
 /**
  * Names `cleanupStaleCollections` must NOT delete.
  *
@@ -224,9 +230,17 @@ function tabName(tab: UnifideckTab): string {
  * names as valid even though only the local one is ever created.
  */
 function validCollectionNames(): Set<string> {
-  const names = new Set(getUnifideckTabs().map(tabName));
-  for (const key of COMPAT_TAB_TITLE_KEYS) {
-    names.add(`${COLLECTION_PREFIX}${i18n.t(key)}`);
+  const tabs = collectionTabs();
+  const names = new Set(tabs.map(tabName));
+  // Only preserve every device's compat-tab naming if the compat tab
+  // itself still gets a collection — it doesn't (skipCollection), so this
+  // is dead in practice today, but stays conditional rather than deleted
+  // outright: it's what lets a *future* un-skipped compat tab keep a
+  // sibling device's differently-named collection from looking stale.
+  if (tabs.some((t) => t.id === "unifideck-deck")) {
+    for (const key of COMPAT_TAB_TITLE_KEYS) {
+      names.add(`${COLLECTION_PREFIX}${i18n.t(key)}`);
+    }
   }
   return names;
 }
@@ -355,7 +369,7 @@ export async function syncUnifideckCollections(): Promise<void> {
     return;
   }
   if (allApps.length === 0) return;
-  await Promise.allSettled(getUnifideckTabs().map((t) => syncTab(t, allApps)));
+  await Promise.allSettled(collectionTabs().map((t) => syncTab(t, allApps)));
 }
 
 /**
@@ -398,7 +412,7 @@ export async function deleteAllUnifideckCollections(): Promise<void> {
   // Tag-based pass first — deterministic lookup for the current locale;
   // the prefix scan below also catches collections created under a
   // different UI language.
-  for (const tab of getUnifideckTabs()) {
+  for (const tab of collectionTabs()) {
     try {
       const id = cs.GetCollectionIDByUserTag(tabName(tab));
       if (typeof id === "string") {

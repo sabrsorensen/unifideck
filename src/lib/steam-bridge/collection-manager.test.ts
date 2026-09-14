@@ -23,6 +23,16 @@ vi.mock("./tab-container", () => ({
       position: 1,
       filters: [],
     },
+    // Mirrors a real skipCollection tab (All Games, Installed, etc.) —
+    // has a native Steam equivalent, so it must never get a
+    // `[Unifideck]` collection of its own.
+    {
+      id: "unifideck-skipme",
+      title: "SkipMe",
+      position: 2,
+      filters: [],
+      skipCollection: true,
+    },
   ],
   isTabMasterInstalled: () => false,
 }));
@@ -194,6 +204,30 @@ describe("cross-device compat collections", () => {
     const names = Array.from(map.values()).map((c) => c.displayName);
     expect(names).not.toContain("[Unifideck] Some Removed Tab");
     expect(names).toContain("[Unifideck] Great on Machine");
+  });
+});
+
+describe("skipCollection", () => {
+  it("never creates a collection for a skipCollection tab", async () => {
+    const { map } = makeStore([]);
+    window.localStorage.setItem(COLLECTIONS_ENABLED_KEY, "1");
+
+    await syncUnifideckCollections();
+
+    const names = Array.from(map.values()).map((c) => c.displayName);
+    expect(names).not.toContain("[Unifideck] SkipMe");
+    expect(names).toContain("[Unifideck] Alpha");
+  });
+
+  it("cleans up a leftover collection for a tab that is now skipCollection", async () => {
+    const { map } = makeStore(["[Unifideck] Alpha", "[Unifideck] SkipMe"]);
+    window.localStorage.setItem(COLLECTIONS_ENABLED_KEY, "1");
+
+    await syncUnifideckCollections();
+
+    const names = Array.from(map.values()).map((c) => c.displayName);
+    expect(names).not.toContain("[Unifideck] SkipMe");
+    expect(names).toContain("[Unifideck] Alpha");
   });
 });
 

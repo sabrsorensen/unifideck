@@ -23,9 +23,12 @@ vi.mock("../library-filters", () => ({
 // the real module pulls in @decky/api. Device-aware titling has its
 // own tests in tab-title-device.test.ts; this file is about the
 // count-path crash guard.
-vi.mock("../device-type", () => ({ getDeviceType: () => "deck" }));
+vi.mock("../device-type", () => ({
+  getDeviceType: () => "deck",
+  compatTabTitleKey: () => "deckTabs.greatOnDeck",
+}));
 
-import { UnifideckTabContainer, type SteamAppFilter } from "./tab-container";
+import { UnifideckTabContainer, getUnifideckTabs, type SteamAppFilter } from "./tab-container";
 import type { SteamAppOverview } from "../../types/steam";
 
 function makeContainer(appids: number[] = []): UnifideckTabContainer {
@@ -38,6 +41,36 @@ function makeContainer(appids: number[] = []): UnifideckTabContainer {
   container.collection.visibleApps = appids.map((appid) => ({ appid } as SteamAppOverview));
   return container;
 }
+
+describe("skipCollection tagging", () => {
+  it("marks only the tabs with a native Steam equivalent", () => {
+    const skipped = getUnifideckTabs()
+      .filter((t) => t.skipCollection)
+      .map((t) => t.id)
+      .sort();
+    expect(skipped).toEqual(
+      ["unifideck-all", "unifideck-deck", "unifideck-installed", "unifideck-nonsteam"].sort(),
+    );
+  });
+
+  it("leaves every per-store tab eligible for a collection", () => {
+    const stores = [
+      "unifideck-steam",
+      "unifideck-epic",
+      "unifideck-gog",
+      "unifideck-amazon",
+      "unifideck-ubisoft",
+      "unifideck-battlenet",
+      "unifideck-w3dhub",
+      "unifideck-microsoft",
+      "unifideck-gamevault",
+    ];
+    const tabs = getUnifideckTabs();
+    for (const id of stores) {
+      expect(tabs.find((t) => t.id === id)?.skipCollection).toBeFalsy();
+    }
+  });
+});
 
 describe("GetAppCountWithToolsFilter guard", () => {
   it("applies a well-formed filter", () => {
