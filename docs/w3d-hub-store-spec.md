@@ -12,9 +12,10 @@
 
 ## 1. Overview
 
-W3D Hub games (Renegade X, A Path Beyond, Tiberian Sun: Reborn, Red Alert 2: Apocalypse
-Rising, Interim Apex, Battle for Dune: War of Assassins, and others — classic C&C/Renegade-
-engine titles) have **no vendor client at all**, unlike Ubisoft/Battle.net. The backend is
+W3D Hub games (C&C Renegade, A Path Beyond, Tiberian Sun: Reborn, Red Alert 2: Apocalypse
+Rising, Interim Apex, Expansive Civilian Warfare, Battle for Dune: War of Assassins — the live
+catalog, confirmed 2026-09-14, lists exactly these 7 — classic C&C/Renegade-engine titles) have
+**no vendor client at all**, unlike Ubisoft/Battle.net. The backend is
 a plain JSON/HTTPS API (`secure.w3dhub.com`, plus a community-run alt backend) with a
 username/password login, a catalog endpoint, and package download endpoints — fully
 specified by the reference launcher's own source, which functions as a de facto protocol
@@ -160,38 +161,61 @@ itself records (§8, no UPC-style on-disk database to read).
 
 ---
 
-## 6. Install Flow (v1 — deliberately narrowed scope)
+## 6. Install Flow
 
-**WWMix (the proprietary archive/patch format, `lib/ww_mix.rb`) is used by the reference
-launcher *only* for applying incremental patches to an already-installed copy** —
-`apply_patch` is its only call site in `application_manager/tasks/task.rb`. A fresh
-install (`Manifest#full?`) never touches it: packages are downloaded as plain `.zip` and
-extracted directly (`unpack_package`). **v1 scope: full installs and full reinstalls on
-update, never incremental patching.** This defers the entire WWMix port — genuinely the
-single biggest complexity reduction available, and a reasonable trade given these are
-modest-sized (single-digit-GB) titles where a full re-download on update is a real but
-acceptable cost, not a WWMix reimplementation's worth of risk.
+**Correction (2026-09-14, live-verified against the real API — see §13): WWMix patch
+application is required for v1, not deferrable.** The original design here assumed a
+fresh install could always fetch a `type="Full"` manifest and skip WWMix entirely, since
+`apply_patch` is only reached for `Manifest#patch?`. That's true, but it doesn't mean
+patching is avoidable: **most titles' current `release` manifest is itself a `Patch`**,
+walking a `baseVersion` chain back to the nearest `Full` manifest — measured live, chain
+depth ranges from 1 (`woa`, Full directly) to 30 (`tsr`). A fresh install of `tsr` today
+means fetching the `Full` baseline manifest and applying 29 patches in sequence, in order,
+every single time — there is no "give me the current full snapshot" shortcut
+(`version: ""` returns `{"error": "not-found"}`, confirmed live).
 
-Steps, mirroring `application_manager/tasks/installer.rb`'s sequence minus everything
-that sequence spends on patch/repair paths:
+The good news: **patching a WWMix container is not a binary-diff algorithm.** Traced
+`apply_patch` fully (`application_manager/tasks/task.rb`) — a "patch" package is a
+downloaded `.zip` containing one file, `<target-file-name>.patch`, itself a WWMix archive
+whose entries are: one special `.w3dhub.patch`/`.bhppatch` entry (a JSON blob,
+`{removedFiles: [...], updatedFiles: [...]}`), plus one **whole fresh copy** of every
+updated file. Applying it is: open the target `.mix`, delete the named `removedFiles`
+entries, copy in the fresh `updatedFiles` entries by name (`add_entry(replace: true)`),
+write the merged result to a temp path, then swap it over the original. No delta/diff of
+file *contents* anywhere — WWMix's whole-container `save()` (mechanical: header + sorted
+CRC32-keyed entry table + names, confirmed by reading it fully, ~140 LOC) already does the
+"write the result" half. **The WWMix port (read + write + this merge routine) stays small
+— the earlier ~287 LOC estimate for the reader alone was accurate; the writer is
+comparably sized.** What changed is *when* it's needed, not how big it is.
 
-1. **Fetch the manifest** — `get-package-details` for the target app/channel/version's
-   manifest "package" (the manifest itself is fetched the same way as game data, just a
-   differently-named package entry), parse the returned XML for `<File name= package=>`
-   entries (skip any carrying `<Patch>` — full-install-only, per above) and `<Dependency>`
-   entries (informational only in v1 — see §12, the reference never actually wires these
-   to anything either).
-2. **Build the unique package set** from the `<File package="...">` attributes.
-3. **Download** each package `.zip` (parallel, `aiohttp`, bounded by a `parallel_downloads`
-   setting mirroring the reference's own default of 4) with a whole-file checksum verify
-   against the `get-package-details` response's `checksum` (the reference's chunked
-   `checksum_chunks` resumable-partial-download scheme is a later optimization, not v1 —
-   see §12).
-4. **Extract** each `.zip` into the title's install directory inside the shared prefix.
-   Exact on-disk convention needs live confirmation against `write_paths_ini`'s
-   `RegClient`/`FileClient` naming (`#{category}\#{id}-#{channel}`) — don't fabricate the
-   path shape before checking a real install.
-5. **Write `data/paths.ini`** into the install directory — format is fully known, port
+`ren` (C&C Renegade) has no downloadable manifest at all
+(`auto_import_win32_registry`/`auto_import` in the reference only run
+`unless W3DHub.windows?` returns — Windows-only registry import from an existing
+Steam/GOG install of the original game). **Out of scope for the install pipeline
+entirely** — 6 of the 7 catalog titles (`apb`, `ar`, `ecw`, `ia`, `tsr`, `woa`) go through
+the package system; `ren` needs a separate, later "import an existing install" flow if
+ever pursued.
+
+**Recommended staging, to de-risk the WWMix work rather than absorb it all at once:**
+build the full pipeline (auth → catalog → download → extract → launch) against **`woa`
+first** — its current release manifest is `Full` directly, so it proves every other piece
+end-to-end with zero WWMix code. Add the patch-merge routine as the very next slice, which
+then unlocks all five remaining downloadable titles at once (it's one routine, not
+per-title logic).
+
+Steps, mirroring `application_manager/tasks/installer.rb`'s sequence minus its
+partial-download-resume and repair paths (see §12):
+
+1. **Fetch the manifest chain** — `get-package-details` for
+   `{category: "games", subcategory: <app_id>, name: "manifest.xml", version: <target>}`,
+   parse the XML, and if `type == "Patch"`, repeat for `baseVersion` until `type == "Full"`
+   is reached. Collect the full chain in base-to-target order.
+2. **Full manifest's files** — download+extract each unique `<File package="...">` `.zip`
+   directly into the install directory (no WWMix involved for these).
+3. **Each subsequent patch manifest, in order** — download the patch `.zip`(s) it
+   references, and for each target `.mix` file the patch touches: load it, apply the
+   remove/update merge described above, save.
+4. **Write `data/paths.ini`** into the install directory — format is fully known, port
    directly:
    ```ini
    [paths]
@@ -203,7 +227,11 @@ that sequence spends on patch/repair paths:
    FileFDS=<category>\<id>-<channel>-server
    UseRenFolder=<bool, from the catalog's usesRenFolder extended-data flag>
    ```
-6. **Write the local install marker** (`w3dhub_installed.json`, §8).
+5. **Write the local install marker** (`w3dhub_installed.json`, §8).
+
+Checksum verification: whole-file checksum against `get-package-details`' `checksum` field
+for v1; the reference's chunked `checksum_chunks` resumable-partial-download scheme is a
+later optimization (see §12).
 
 No per-install winetricks/dependency step — that's §3's one-time shared-prefix bootstrap,
 already done before the first install ever runs.
@@ -308,9 +336,10 @@ Proposed keys, `config.py` (`W3DHubConfig`):
   the observed protocol/format shape (the JSON request/response bodies, the manifest XML
   schema, the `paths.ini` format) rather than translating the Ruby source line-by-line —
   formats and protocols aren't copyrightable, specific code expression is.
-- **WWMix/patch support is out of scope for v1** (§6) — a fast-follow, not a blocker.
-  Revisit if full-reinstall-on-update proves too expensive in practice (unlikely at these
-  install sizes).
+- **WWMix patch-merge is required for v1** (§6, corrected 2026-09-14 — the original
+  version of this doc assumed it was deferrable; live testing showed otherwise). Stage the
+  build against `woa` (no patching needed) first to prove the rest of the pipeline, then
+  add the patch-merge routine to unlock the other five downloadable titles at once.
 - **`<Dependency>` manifest entries are unwired even upstream.** `create_wine_prefix` and
   `install_dependencies` in the reference's own `task.rb` are literal `# TODO:` stubs —
   the winetricks set this spec uses (§3) was derived independently (community knowledge,
@@ -325,11 +354,49 @@ Proposed keys, `config.py` (`W3DHubConfig`):
   Linux/Wine statement (see the Battle.net feasibility doc for that precedent). The
   existing Linux launcher operating openly against the same API for years is a reasonable
   signal, not a substitute for checking directly before shipping broadly.
-- **Auth requirement for package download is unverified** (§4) — confirm with a live
-  account before writing `installer.py`, don't assume either way.
 - **`+netplayername` is cosmetic**, not account-bound — fine to default from the account
   username once logged in, but must remain user-editable since it's meaningful in-game
   identity, not an auth artifact.
+- **`ren` (C&C Renegade) is out of the install pipeline entirely** (§6) — no downloadable
+  manifest; the reference imports it from an existing Windows registry entry left by a
+  separate Steam/GOG install. A later, separate "import" flow if ever pursued — v1 covers
+  the other 6 catalog titles.
+
+---
+
+## 13. Live API verification (2026-09-14)
+
+Unauthenticated `GET`/`POST` requests against the alt backend
+(`w3dhub-api.w3d.cyberarm.dev`), no account involved — resolves several items §4/§12
+previously flagged as unverified.
+
+**§4's auth-requirement question is resolved for the public catalog: no Bearer token
+needed.** `get-applications`, `get-package-details`, and the resulting `download_url`
+fetches all returned real data with zero `Authorization` header. Whether *restricted*
+channels (a `user-level` above `public`) need one is still unconfirmed — none of the 7
+games' channels in the current catalog carry anything but `"user-level": "public"`, so
+there was nothing gated to test against.
+
+**Live catalog** (`get-applications`, alt backend): 7 games, matching §1's corrected list
+exactly — `apb`, `ar`, `ecw`, `ia`, `ren`, `tsr`, `woa`. Confirmed field shape matches
+§1/§5 exactly, e.g. `apb`: `channels: [{id, name, "current-version", "user-level"}, ...]`,
+`extended-data: [{name: "colour"|"usesEngineCfg"|"usesRenFolder", value}]`.
+
+**Manifest chain depth per title**, walking `baseVersion` from each `release` channel's
+`current-version` to the nearest `Full` manifest (drives §6's corrected install flow):
+
+| `app_id` | release version | chain depth | notes |
+|---|---|---|---|
+| `woa` | 1.0.1.3 | 1 (Full) | no patching needed — build the pipeline against this first |
+| `ia` | 1.0.4.1 | 2 | 1 patch |
+| `ecw` | 1.0.1.5 | 3 | 2 patches |
+| `apb` | 3.8.1.0 | 4 | 3 patches |
+| `ar` | 0.9.0.13 | 8 | 7 patches |
+| `tsr` | 2.1.0.2 | 30 | 29 patches — the real stress case for the patch-merge routine |
+| `ren` | 1.0.0.0 | — | `manifest.xml` request returns `{"error": "not-found"}` — confirms §6's registry-import special case, not a download-pipeline title |
+
+`version: ""` (hypothesized "give me the current full snapshot" shortcut) was tested
+directly and returns `{"error": "not-found"}` — there is no way around walking the chain.
 
 ---
 

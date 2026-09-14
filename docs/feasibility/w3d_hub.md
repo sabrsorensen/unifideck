@@ -1,8 +1,9 @@
 # Feasibility Study: W3D Hub store
 
-**Verdict: FEASIBLE — a new archetype, and a comparatively cheap one.** W3D Hub (Renegade X, A
-Path Beyond, Tiberian Sun: Reborn, Red Alert 2: Apocalypse Rising, Interim Apex, Battle for Dune:
-War of Assassins, and others — classic C&C/Renegade-engine titles built on the W3D engine) has no
+**Verdict: FEASIBLE — a new archetype, and a comparatively cheap one.** W3D Hub (C&C Renegade,
+A Path Beyond, Tiberian Sun: Reborn, Red Alert 2: Apocalypse Rising, Interim Apex, Expansive
+Civilian Warfare, Battle for Dune: War of Assassins — classic C&C/Renegade-engine titles built on
+the W3D engine; confirmed 2026-09-14 against the live catalog, 7 games total) has no
 official Linux support and no official API docs, but unlike Battle.net there is no vendor client
 to wrap: the backend is a plain JSON/HTTPS API, already fully specified by an open-source
 Linux-native launcher (`cyberarm/w3d_hub_linux_launcher`, MIT-adjacent-but-unlicensed — see
