@@ -93,6 +93,51 @@ class EdgeCDPClient:
         except Exception:
             return []
 
+    # ── Cookies ──────────────────────────────────────────────────────
+
+    async def get_cookies(self) -> list[dict[str, Any]] | None:
+        """All cookies visible to the browser, via ``Storage.getCookies``.
+
+        Browser-level (no ``params``), not the page-level
+        ``Network.getAllCookies`` — that method is gone from the
+        browser-level target on modern CDP (measured: Edge 150 answers
+        ``-32601 "wasn't found"``). ``Storage.getCookies`` is the
+        replacement and, usefully, returns **plaintext** values
+        including httpOnly cookies — there is nothing to decrypt and no
+        coupling to Chromium's on-disk cookie-store encryption scheme.
+
+        Returns ``None`` if the browser isn't reachable or the call
+        fails; an empty list is a valid "no cookies yet" answer and is
+        different from "couldn't ask".
+        """
+        ws_url = self.get_browser_ws_url()
+        if not ws_url:
+            return None
+        try:
+            import websockets
+        except ImportError:
+            logger.warning("[Edge] get_cookies: websockets not available")
+            return None
+        try:
+            async with websockets.connect(ws_url, close_timeout=3) as ws:
+                await ws.send(json.dumps({
+                    "id": 1,
+                    "method": "Storage.getCookies",
+                    "params": {},
+                }))
+                raw = await asyncio.wait_for(ws.recv(), timeout=5)
+                msg = json.loads(raw)
+                if "error" in msg:
+                    logger.warning(
+                        "[Edge] get_cookies error: %s", msg["error"],
+                    )
+                    return None
+                cookies = msg.get("result", {}).get("cookies")
+                return cookies if isinstance(cookies, list) else []
+        except Exception as exc:
+            logger.warning("[Edge] get_cookies failed: %s", exc)
+            return None
+
     # ── Navigation ───────────────────────────────────────────────────
 
     async def navigate_tab(

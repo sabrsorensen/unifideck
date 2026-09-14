@@ -6,18 +6,22 @@ Joins what the client leaves on disk::
 
     licences (CachedData.db)  ─┐
                                ├─> PUB catalog rules ─> playable programs
-    presumed game accounts    ─┘
+    game accounts             ─┘   (fetched, else presumed)
                                         │
     aggregate.json + product.db ────────┴─> installed overlay
 
 Licences alone miss every free-to-play and subscription title, because those
 match on ``game_account`` rather than ``license_id``. **Game accounts are not
-knowable here**: ``CachedData.db`` holds licences and a battle tag and nothing
-else, and the web endpoint that carries them needs an OAuth token we cannot
-ship. Measured on one real account, that gap cost 7 of 24 titles — WoW,
-Hearthstone, Overwatch, Heroes of the Storm, Diablo Immortal and two more.
+knowable from the client**: ``CachedData.db`` holds licences and a battle tag
+and nothing else. The web endpoint that carries them (``games-and-subs``)
+needs an account.battle.net *web* session, which the native-client sign-in
+does not create. Measured on one real account, that gap cost 7 of 24 titles —
+WoW, Hearthstone, Overwatch, Heroes of the Storm, Diablo Immortal and two more.
 
-So :func:`grant_ownership` presumes a game account for every catalog program:
+When the user has also signed in on the web through the shared Edge profile,
+``BattlenetStore._refresh_game_accounts`` fetches the real set (GitHub #447)
+and it is passed in here as ``game_account_programs``. Otherwise
+:func:`grant_ownership` presumes a game account for every catalog program:
 the gated set is exactly the titles any Battle.net account can install and
 play. Two guards keep the presumption from inventing dead tiles — a program
 with no install uid is skipped, and so is one the catalog gives no Windows
@@ -427,19 +431,26 @@ def _orphan_installed(
     return games
 
 
-def read_account_facts(drive_c: Path) -> AccountFacts:
+def read_account_facts(
+    drive_c: Path, game_account_programs: frozenset[str] = frozenset(),
+) -> AccountFacts:
     """Assemble the account facts the catalog rules are evaluated against.
 
-    Licences are the only fact the client stores locally; game accounts are
-    supplied by :func:`grant_ownership`'s presumption instead of read here.
+    Licences are the only fact the client stores locally. Game accounts come
+    from the web enrichment when it has landed; left empty, they are
+    supplied by :func:`grant_ownership`'s presumption instead.
     """
     licences = read_licences(drive_c)
-    return AccountFacts(licence_ids=licences.licence_ids)
+    return AccountFacts(
+        licence_ids=licences.licence_ids,
+        game_account_programs=game_account_programs,
+    )
 
 
 async def read_library(
     drive_c: Path,
     *,
+    game_account_programs: frozenset[str] = frozenset(),
     collect_installed: Callable[[], dict[str, Any]],
     launcher_path: str,
 ) -> list[Game] | None:
@@ -465,7 +476,9 @@ async def read_library(
             "once so it populates; library reported unknown, not empty",
         )
         return None
-    facts = await asyncio.to_thread(read_account_facts, drive_c)
+    facts = await asyncio.to_thread(
+        read_account_facts, drive_c, game_account_programs,
+    )
     installed = await asyncio.to_thread(collect_installed)
     return build_library(
         catalog, facts, installed, launcher_path=launcher_path,

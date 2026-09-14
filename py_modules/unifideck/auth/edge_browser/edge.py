@@ -199,6 +199,10 @@ class EdgeBrowser:
         """The auth window's CDP targets (delegates to EdgeCDPClient)."""
         return self._cdp.list_targets()
 
+    async def get_cookies(self) -> list[dict[str, Any]] | None:
+        """Delegate to EdgeCDPClient. Plaintext cookies, browser-wide."""
+        return await self._cdp.get_cookies()
+
     # ── Per-flavour CDP ports ────────────────────────────────────────
 
     def browser_game_cdp_port(self) -> int:
