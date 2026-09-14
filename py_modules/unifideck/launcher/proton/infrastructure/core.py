@@ -133,6 +133,13 @@ def _resolve_prefix(ctx: LaunchContext) -> Path:
         path = _ubisoft_prefix_path(ctx, prefixes_dir)
     elif ctx.store == "battlenet":
         path = _battlenet_prefix_path(ctx, prefixes_dir)
+    elif ctx.store == "w3dhub":
+        # Deliberately constant, not derived from ctx.game_id — every W3D
+        # Hub title shares one prefix (docs/w3d-hub-store-spec.md §3: no
+        # vendor client whose update churn per-game isolation defends
+        # against, and every title needs the identical winetricks set —
+        # see launcher/proton/fixes/game_fixes.py's W3D Hub entries).
+        path = prefixes_dir / "w3dhub" / "shared"
     else:
         path = prefixes_dir / ctx.game_id
         while path.name == "pfx":

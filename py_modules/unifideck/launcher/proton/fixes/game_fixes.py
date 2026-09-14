@@ -58,6 +58,36 @@ MANUAL_FIXES: dict[str, GameFix] = {
         source="manual",
     ),
 }
+# ── W3D Hub (all titles share one prefix — see stores/w3d_hub) ────
+# Every W3D Hub title shares one Proton prefix (docs/w3d-hub-store-spec.md
+# §3 — no vendor client whose update churn per-game isolation defends
+# against, and every title needs the identical redistributable set), so
+# apply_winetricks's prefix-scoped completion marker only ever needs to
+# run this list once, no matter which title happens to launch first — but
+# get_required_winetricks looks up by game_id, so every title needs its
+# own entry pointing at the same list. Verbatim from nix-dendrites'
+# modules/features/w3d-hub-launcher/_package.nix, which bootstraps the
+# desktop launcher's own (also shared, also single) prefix with this same
+# set: corefonts/vcrun2008/vcrun2010 for the engine's own redistributable
+# needs, xact/xact_x64 for audio, d3dx9/d3dx9_43 (Wine's built-in
+# vkd3d-shader reimplementation fails to compile some W3D shaders without
+# these), msxml3, dotnet452 (needs the win7 Windows-version override to
+# install at all), and dxvk — required specifically because titles with a
+# DX11/CEF launcher overlay in front of the DX9-era engine (e.g. A Path
+# Beyond's `-launcher` UI) fail to import dxgi.dll/d3d11.dll otherwise,
+# which Wine ships no native implementation of.
+_W3D_HUB_WINETRICKS: list[str] = [
+    "corefonts", "vcrun2008", "vcrun2010", "xact", "xact_x64",
+    "d3dx9", "d3dx9_43", "msxml3", "dotnet452", "win7", "d3dcompiler_47",
+    "dxvk",
+]
+for _w3d_hub_id in ("apb", "ar", "ecw", "ia", "tsr", "woa"):
+    MANUAL_FIXES[f"{_w3d_hub_id}-release"] = GameFix(
+        winetricks=_W3D_HUB_WINETRICKS,
+        notes="W3D Hub — shared prefix, see stores/w3d_hub",
+        source="manual",
+    )
+del _w3d_hub_id
 # ── Rockstar-on-Epic games (RDR2 / GTA5) ──────────────────────────
 # These Epic titles boot the Rockstar Games Launcher, which then runs
 # the real game exe (``PlayRDR2.exe`` / ``PlayGTAV.exe``). Getting them

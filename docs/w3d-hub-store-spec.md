@@ -55,7 +55,8 @@ W3D Hub-specific code **outside** the package:
 
 | Path | Responsibility |
 | ---- | -------------- |
-| `launcher/proton/infrastructure/core.py` | Add one `_w3d_hub_prefix_path(ctx)` branch to `_resolve_prefix` — the constant shared path (§3). **No new handler file needed** — see §7: `generic.py`'s existing `_raw_exe_launch` (the `else` branch of `generic_launch`) already does exactly what a W3D Hub launch needs. |
+| `launcher/proton/infrastructure/core.py` | Add one `_w3d_hub_prefix_path(ctx)` branch to `_resolve_prefix` — the constant shared path (§3). |
+| `launcher/proton/handlers/generic.py` | Add `_w3d_hub_launch(plan)` (small, same size class as `_amazon_launch`) + one `generic_launch` dispatch branch — builds the `-launcher [+connect ...] +netplayername <nickname>` args from local state, see §7 (corrected 2026-09-14 — not baked into the shortcut's `LaunchOptions`, which is always the fixed `"<store>:<game_id>"` dispatch token). |
 | Frontend login form | **New UI surface** — every existing store signs in via OAuth-in-Edge or a vendor-GUI shortcut; this is the first plain username/password form. No existing component to reuse as-is. |
 
 ---
@@ -240,43 +241,53 @@ already done before the first install ever runs.
 
 ## 7. Launch Flow
 
-**No new launch-handler file — reuse `generic.py`'s existing dispatch.** Checked
-`generic_launch` fully: it branches on `plan.context.store` for GOG (`_gog_launch`,
-orchestrator with its own redistributable setup) and Amazon (`_amazon_launch`, reads
-`fuel.json` launch args), and **falls through to `_raw_exe_launch` for everything else**
-— which is exactly `python_bin umu_wrapper exe_path <plan.state.game_args>` via
-`run_umu_with_retry`. W3D Hub has no vendor-orchestrator step and no `fuel.json`
-equivalent, so the existing `else` branch already does the whole job. This also settles a
-question the original draft of this spec hadn't asked yet: W3D Hub should **not** join
-`launcher.wrapper_stores.WRAPPER_STORES` (`{"ubisoft", "battlenet"}`) — that set (and its
-`client_runs_in_prefix` flag) exists for stores with an actual vendor client resident in
-the prefix, which W3D Hub doesn't have; it's shaped like a GOG/Amazon Windows title that
-happens to share one prefix across games, not like a wrapper store.
+**Correction (2026-09-14): `LaunchOptions` is not where the connect args go.** The
+original version of this section assumed Steam's per-shortcut `LaunchOptions` field could
+carry `-launcher +connect ...` directly, the way the EmeraldEcho manual shortcuts do.
+Checked `ShortcutService` directly: every Unifideck-generated shortcut's `Exe` is always
+`unifideck-launcher`, and `LaunchOptions` is always the fixed dispatch token
+`"<store>:<game_id>"` (confirmed against real shortcuts —
+`battlenet:w3`/`battlenet:s1`/etc. in EmeraldEcho's own `shortcuts.vdf`) — it's what the
+launcher's own argv parsing uses to pick *which* store/game to run, not a place for
+game-specific arguments. `launcher/types/options.py`'s `parse_launch_options` (which feeds
+`plan.state.game_args`) exists to capture anything a user *additionally* appends via
+Steam's own "Edit Launch Options" dialog on top of that token — it's user customization
+layered on, not the primary source of a store's own launch arguments. Amazon's
+`_read_amazon_fuel_args` is the actual precedent: store-specific args are constructed
+*inside the launch handler*, from local state, and `plan.state.game_args` is appended
+after.
 
-What *is* new:
+So this **does** need one small addition to `generic.py`'s dispatch (not a bespoke new
+file — the function is a handful of lines, same size class as `_amazon_launch`):
 
-1. **One `_resolve_prefix` branch** in `launcher/proton/infrastructure/core.py` — a
+1. **`_w3d_hub_launch(plan)`** in `generic.py`, alongside `_gog_launch`/`_amazon_launch`,
+   wired into `generic_launch`'s `store ==` branches. Builds
+   `["-launcher"] + (["+connect", f"{ip}:{port}"] if a server is chosen else []) +
+   ["+netplayername", nickname]`, reading the nickname from a small local settings file
+   (`w3dhub_settings.json` in the store's data dir — same local-file pattern as Amazon's
+   `fuel.json` read, not a `ConfigManager` round trip), then appends
+   `plan.state.game_args` (any user customization) and runs via `run_umu_with_retry`,
+   identical to `_raw_exe_launch` otherwise.
+2. **One `_resolve_prefix` branch** in `launcher/proton/infrastructure/core.py` — a
    `_w3d_hub_prefix_path()` returning the constant shared path (§3), alongside the
    existing `_ubisoft_prefix_path`/`_battlenet_prefix_path` functions (which derive a
    path per `game_id`; this one doesn't need `ctx` at all).
-2. **`-launcher [+connect <ip>:<port> +netplayername <nickname>]` baked into the Steam
-   shortcut's `LaunchOptions` at shortcut creation/update time**, not constructed at
-   launch time — Steam's own `%command%` parsing (`launcher/types/options.py`) is what
-   populates `plan.state.game_args`, and that's a **static field on the shortcut itself**,
-   the same mechanism the EmeraldEcho manual shortcuts already use directly. So
-   `ShortcutService`'s W3D Hub entry point (mirroring how other stores keep their
-   shortcuts' launch options current) is where the connect args actually get set, not
-   the launch handler. `<nickname>` is a free-text local setting (`server_list_username`
-   in the reference, **not** bound to the W3D Hub account) — prompt once, persist, same
-   shape as the reference's own first-use prompt.
-3. **Server selection, v1**: omit `+connect` entirely (empty/`-launcher`-only
-   `LaunchOptions`) and let the game's own menu/server browser handle it, unless/until the
-   GSH server-list API (`gsh.w3d.cyberarm.dev` — `/listings/getAll/v2`,
-   `/listings/getStatus/v2/:id`, both unauthenticated JSON, confirmed live) is wired up as
-   a real in-Unifideck picker that rewrites `LaunchOptions` when the user picks a
-   favorite. Hardcoding one server address (what the EmeraldEcho manual shortcuts do)
-   isn't something to ship generally.
-4. **Exe path resolution** — from the local install marker (`w3dhub_installed.json`) for
+3. **`<nickname>` is a free-text local setting** (`server_list_username` in the
+   reference, **not** bound to the W3D Hub account) — prompt once, persist, same shape as
+   the reference's own first-use prompt.
+4. **Server selection, v1**: omit `+connect` entirely and let the game's own menu/server
+   browser handle it, unless/until the GSH server-list API (`gsh.w3d.cyberarm.dev` —
+   `/listings/getAll/v2`, `/listings/getStatus/v2/:id`, both unauthenticated JSON,
+   confirmed live) is wired up as a real in-Unifideck picker. Hardcoding one server
+   address (what the EmeraldEcho manual shortcuts do) isn't something to ship generally.
+
+This also settles a question the original draft of this spec hadn't asked yet: W3D Hub
+should **not** join `launcher.wrapper_stores.WRAPPER_STORES` (`{"ubisoft", "battlenet"}`)
+— that set (and its `client_runs_in_prefix` flag) exists for stores with an actual vendor
+client resident in the prefix, which W3D Hub doesn't have; it's shaped like a GOG/Amazon
+Windows title that happens to share one prefix across games, not like a wrapper store.
+
+5. **Exe path resolution** — from the local install marker (`w3dhub_installed.json`) for
    the `app_id`/`channel`, never reconstructed from the id, same discipline `paths.py`-
    style modules in every other store already follow. This is what `LaunchContext`
    construction needs to resolve before `generic_launch` ever runs.

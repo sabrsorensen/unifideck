@@ -80,6 +80,62 @@ async def _amazon_launch(plan: ProtonLaunchPlan) -> int:
     return await run_umu_with_retry(
         argv, env=plan.env, cwd=cwd, on_start=plan.on_process_start,
     )
+_W3D_HUB_SETTINGS_PATH = Path(
+    "~/.local/share/unifideck/w3dhub_settings.json",
+).expanduser()
+_W3D_HUB_DEFAULT_NICKNAME = "Player"
+
+
+def _read_w3d_hub_nickname() -> str:
+    """The free-text local nickname (``+netplayername``), never account-bound.
+
+    Read directly from a fixed path rather than via ``ConfigManager`` —
+    this runs in the launcher process, under the system Python, which
+    (like every other store's launch handler) cannot reach the plugin
+    backend's config. Falls back to a generic default rather than
+    failing the launch; the settings UI is where a real nickname should
+    get set before this ever matters in practice.
+    """
+    import json
+
+    try:
+        data = json.loads(_W3D_HUB_SETTINGS_PATH.read_text(encoding="utf-8"))
+        nickname = data.get("nickname") if isinstance(data, dict) else None
+        if isinstance(nickname, str) and nickname.strip():
+            return nickname.strip()
+    except (OSError, ValueError):
+        pass
+    return _W3D_HUB_DEFAULT_NICKNAME
+
+
+async def _w3d_hub_launch(plan: ProtonLaunchPlan) -> int:
+    """W3D Hub launch — a plain Windows exe, no vendor orchestrator.
+
+    Builds ``-launcher +netplayername <nickname>`` and runs it exactly
+    like :func:`_raw_exe_launch` — matches ``ApplicationManager#run``/
+    ``#join_server`` in the reference launcher, confirmed live against
+    EmeraldEcho's own working non-Steam shortcuts (see
+    docs/w3d-hub-store-spec.md §7). ``+connect <server>`` is deliberately
+    omitted for v1 — see the spec on why a hardcoded server address isn't
+    something to ship generally; the game's own menu handles server
+    selection until a real in-Unifideck picker exists.
+    """
+    cwd: Path | None = None
+    if plan.context.exe_path.parent.is_dir():
+        cwd = plan.context.exe_path.parent
+    nickname = _read_w3d_hub_nickname()
+    argv: list[str] = [
+        str(plan.python_bin), str(plan.umu_wrapper), str(plan.context.exe_path),
+        "-launcher", "+netplayername", nickname,
+    ]
+    argv.extend(plan.state.game_args)
+    logger.info(
+        "[launcher.proton.generic] W3D Hub launch: %s (nickname=%s)",
+        plan.context.exe_path, nickname,
+    )
+    return await run_umu_with_retry(argv, env=plan.env, cwd=cwd, on_start=plan.on_process_start)
+
+
 async def _raw_exe_launch(plan: ProtonLaunchPlan) -> int:
     """Raw exe launch."""
     logger.info(
@@ -113,6 +169,11 @@ async def generic_launch(plan: ProtonLaunchPlan) -> int:
             game_title=plan.context.game_key,
         )
         rc = await _amazon_launch(plan)
+    elif store == "w3dhub":
+        # No dedicated toast — see docstring on _w3d_hub_launch. Adding one
+        # would need a new key in all 16 locale files; the generic
+        # "launchingGame" toast the frontend already shows covers this.
+        rc = await _w3d_hub_launch(plan)
     else:
         rc = await _raw_exe_launch(plan)
     plan.state.game_exit_code = rc
