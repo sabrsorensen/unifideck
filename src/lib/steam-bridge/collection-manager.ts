@@ -14,7 +14,7 @@ import {
   type UnifideckTab,
 } from "./tab-container";
 import { COMPAT_TAB_TITLE_KEYS, awaitDeviceType } from "../device-type";
-import { runFilters } from "../library-filters";
+import { isUnifideckCacheLoaded, runFilters } from "../library-filters";
 import { EventBusClient } from "../../api/event-bus-client";
 import { Events } from "../../types/events";
 import type { SteamAppOverview } from "../../types/steam";
@@ -476,6 +476,31 @@ async function waitForCollections(timeoutMs = 30_000): Promise<boolean> {
 }
 
 /**
+ * Confirmed live 2026-09-15: right after a decky-loader restart, Steam's
+ * own `type-games` collection (what {@link waitForCollections} waits for)
+ * hydrates well before ``unifideckGameCache`` does — that cache only
+ * fills once the ``get_all_unifideck_games`` RPC round-trip resolves,
+ * which is slower and, on a cold backend, not even guaranteed to finish
+ * before this runs. Every per-store tab's `syncTab` reads that cache via
+ * `getStoreForApp`; with it still empty, EVERY store's collection (not
+ * just an idle one) matches zero apps and gets deleted as "nothing to
+ * show" — not a legitimate empty state, a not-ready one. Nothing else
+ * re-triggers a resync unless a real sync or install/uninstall event
+ * fires afterward, so the wipe was otherwise permanent until one did.
+ * Mirrors ``tab-container.ts``'s own hydration-retry fix for the same
+ * underlying race (UD-071), just gating the one-shot boot call here
+ * instead of a rebuildable tab list.
+ */
+async function waitForUnifideckCache(timeoutMs = 30_000): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (isUnifideckCacheLoaded()) return true;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  return false;
+}
+
+/**
  * Collection manager. Collections are opt-in ({@link isCollectionsEnabled}):
  *
  * - ON  → subscribe to `unifideck-sync-completed` and rebuild the
@@ -587,18 +612,27 @@ export function startCollectionManager(): CollectionManagerHandle {
   // apply the resolved ON/OFF state. We can only decide after migration
   // (which needs the store), so the sync listener is attached here rather
   // than synchronously — the initial sync below covers anything missed.
-  void waitForCollections()
-    .then((ready) => {
-      const cs = ready ? getCollectionStore() : null;
+  //
+  // Also wait for ``unifideckGameCache`` to load, separately from Steam's
+  // own store — it hydrates on its own, slower, RPC-backed schedule, and
+  // ``syncTab`` cannot tell "genuinely no games in this store yet" from
+  // "cache not loaded yet" (see ``waitForUnifideckCache``'s docstring).
+  // Racing ahead of it deleted every per-store collection, not just an
+  // idle one.
+  void Promise.all([waitForCollections(), waitForUnifideckCache()])
+    .then(([storeReady, cacheReady]) => {
+      const ready = storeReady && cacheReady;
+      const cs = storeReady ? getCollectionStore() : null;
       if (cs) migrateGrandfatherExisting(cs);
       if (isCollectionsEnabled()) {
         attachSync();
         if (ready) enabledSync();
         else
           console.warn(
-            "[Unifideck Collections] store never became ready — skipping initial sync",
+            "[Unifideck Collections] store or cache never became ready " +
+              `(store=${storeReady} cache=${cacheReady}) — skipping initial sync`,
           );
-      } else if (ready) {
+      } else if (storeReady) {
         cleanupOnce();
       }
     })

@@ -36,8 +36,19 @@ vi.mock("./tab-container", () => ({
   ],
   isTabMasterInstalled: () => false,
 }));
+// `cacheHolder` stands in for `unifideckGameCache`'s own readiness flag —
+// controllable per-test so the boot-race regression below can simulate a
+// slow `get_all_unifideck_games` RPC (see collection-manager.ts's
+// `waitForUnifideckCache` docstring for the real defect this guards).
+const cacheHolder = { loaded: true };
 vi.mock("../library-filters", () => ({
-  runFilters: () => true,
+  // A vi.fn() (not a plain arrow) so the boot-race regression can assert
+  // on *whether the sync ever ran* directly, rather than inferring it
+  // from collection membership — every app matches this stub regardless
+  // of cache state, so membership alone can't distinguish "sync skipped"
+  // from "sync ran and matched anyway."
+  runFilters: vi.fn(() => true),
+  isUnifideckCacheLoaded: () => cacheHolder.loaded,
 }));
 // `call` is the only @decky/api binding reachable from here (via
 // event-bus-client, which the manager subscribes to for install/uninstall).
@@ -76,6 +87,7 @@ vi.mock("i18next", () => ({
   },
 }));
 
+import { runFilters } from "../library-filters";
 import {
   deleteAllUnifideckCollections,
   syncUnifideckCollections,
@@ -138,6 +150,7 @@ function makeStore(names: string[]) {
 
 beforeEach(() => {
   window.localStorage.clear();
+  cacheHolder.loaded = true;
 });
 
 describe("deleteAllUnifideckCollections", () => {
@@ -243,6 +256,43 @@ describe("startCollectionManager", () => {
 
     expect(window.localStorage.getItem(COLLECTIONS_CLEANED_KEY)).toBe("1");
     expect(Array.from(map.values()).map((c) => c.displayName)).not.toContain("[Unifideck] Alpha");
+
+    handle.remove();
+  });
+
+  /**
+   * Regression guard for a real defect found live 2026-09-15: right after
+   * a decky-loader restart, Steam's own `type-games` collection hydrates
+   * well before `unifideckGameCache` does (that cache only fills once the
+   * `get_all_unifideck_games` RPC round-trip resolves). The boot sync used
+   * to key off Steam's readiness alone, so `syncTab` ran with the cache
+   * still empty — `getStoreForApp` matched nothing for ANY per-store tab,
+   * and every existing `[Unifideck]` collection got deleted as "nothing
+   * to show," not just an idle one. Confirmed on a real Deck: both
+   * Battle.net's and W3D Hub's collections vanished on the same boot,
+   * leaving only the one whose filter never consults the cache
+   * (`[Unifideck] Steam`).
+   */
+  it("does not run the initial sync while unifideckGameCache has not loaded yet", async () => {
+    cacheHolder.loaded = false;
+    makeStore(["[Unifideck] Alpha"]);
+    window.localStorage.setItem(COLLECTIONS_ENABLED_KEY, "1");
+    vi.mocked(runFilters).mockClear();
+
+    const handle = startCollectionManager();
+    // Long enough for waitForCollections() to resolve and for several
+    // cache polls to happen; far short of either's 30s give-up deadline.
+    // Asserting on runFilters directly (rather than on collection
+    // membership) is deliberate: every app matches this file's stub
+    // regardless of cache state, so membership alone can't distinguish
+    // "sync skipped" from "sync ran and matched anyway."
+    await new Promise((r) => setTimeout(r, 20));
+    expect(runFilters).not.toHaveBeenCalled();
+
+    cacheHolder.loaded = true;
+    // Past the 500ms poll interval waitForUnifideckCache uses.
+    await new Promise((r) => setTimeout(r, 600));
+    expect(runFilters).toHaveBeenCalled();
 
     handle.remove();
   });
