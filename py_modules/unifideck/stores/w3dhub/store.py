@@ -158,7 +158,17 @@ class W3DHubStore(StoreBase):
 
     # ── StoreBase: install ───────────────────────────────────────────────
 
-    async def install_game(self, game_id: str, **kwargs: Any) -> InstallResult:
+    async def install_game(
+        self, game_id: str, base_path: str | None = None, **kwargs: Any,
+    ) -> InstallResult:
+        """``base_path`` (the worker's storage-location arg) is accepted but
+        ignored — every title installs under the one shared prefix's
+        ``drive_c`` (see ``config.install_base``, spec §3); there is no
+        per-install location to redirect it to. Every non-wrapper store's
+        ``install_game`` takes this as its second positional parameter
+        (``DownloadWorker._run_install`` calls it positionally), so it must
+        be declared even though this store has nothing to do with it.
+        """
         parsed = self._parse_game_id(game_id)
         if parsed is None:
             return InstallResult(success=False, error="invalid_game_id", game_id=game_id)
