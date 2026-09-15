@@ -16,6 +16,7 @@ full re-download on any mismatch.
 from __future__ import annotations
 
 import asyncio
+import functools
 import hashlib
 import logging
 import tempfile
@@ -110,12 +111,30 @@ async def install_title(
             raise InstallError(f"No package details for {ref.name}:{ref.version}")
         download_url = detail.get("download_url")
         checksum = detail.get("checksum")
-        if not download_url:
-            raise InstallError(f"Package {ref.name}:{ref.version} has no download_url ({detail.get('error')})")
 
         zip_path = cache_dir / f"{app_id}-{ref.name}-{ref.version}.zip"
+        if download_url:
+            fetch = functools.partial(api.download_package, download_url, str(zip_path))
+        else:
+            # No direct CDN URL for this package (confirmed live 2026-09-14:
+            # this is NOT necessarily "doesn't exist" — the reference
+            # launcher's own fallback for exactly this case is to stream the
+            # bytes straight from get-package instead). Needs a real token;
+            # install_game's own auth gate means access_token is always set
+            # by the time a real install reaches here.
+            if not access_token:
+                raise InstallError(
+                    f"Package {ref.name}:{ref.version} has no download_url "
+                    f"and no session to use the direct-fetch fallback "
+                    f"({detail.get('error')})",
+                )
+            fetch = functools.partial(
+                api.download_package_direct,
+                ref.category, ref.subcategory, ref.name, ref.version,
+                str(zip_path), access_token=access_token,
+            )
         await _download_and_verify(
-            api, download_url, zip_path, checksum, progress_cb=progress_cb, package_name=ref.name,
+            fetch, zip_path, checksum, progress_cb=progress_cb, package_name=ref.name,
         )
 
         if ref.is_patch:
@@ -193,8 +212,7 @@ async def _fetch_package_details(
 
 
 async def _download_and_verify(
-    api: W3DHubApi,
-    download_url: str,
+    fetch: Callable[[], Awaitable[bool]],
     dest: Path,
     checksum: str | None,
     *,
@@ -202,18 +220,23 @@ async def _download_and_verify(
     package_name: str,
     max_attempts: int = 2,
 ) -> None:
-    # No per-chunk progress callback: download_package's on_progress runs
-    # synchronously inside the worker thread asyncio.to_thread spawns for
-    # the blocking urllib download (api.py's _download_blocking), so it
-    # cannot safely schedule a coroutine on this loop from there. v1 emits
-    # one "downloading" event per package instead of live byte counts —
-    # a coarser but thread-safe granularity; per-chunk progress would need
+    # ``fetch`` is a closure over whichever of api.download_package /
+    # api.download_package_direct applies to this package — both share the
+    # same "() -> bool, never raises" shape, so this loop doesn't need to
+    # know which one it's calling.
+    #
+    # No per-chunk progress callback: both download methods' on_progress
+    # runs synchronously inside the worker thread asyncio.to_thread spawns
+    # for the blocking urllib download, so it cannot safely schedule a
+    # coroutine on this loop from there. v1 emits one "downloading" event
+    # per package instead of live byte counts — a coarser but thread-safe
+    # granularity; per-chunk progress would need
     # asyncio.run_coroutine_threadsafe against a captured loop reference,
     # not worth the complexity for a single-file-per-package download.
     last_error: str | None = None
     for _attempt in range(max_attempts):
         await _emit(progress_cb, InstallProgress(phase="downloading", package=package_name))
-        ok = await api.download_package(download_url, str(dest))
+        ok = await fetch()
         if not ok:
             last_error = "download failed"
             continue

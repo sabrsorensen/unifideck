@@ -234,6 +234,32 @@ class W3DHubApi:
             _download_blocking, download_url, dest_path, on_progress,
         )
 
+    async def download_package_direct(
+        self, category: str, subcategory: str, name: str, version: str,
+        dest_path: str, *, access_token: str, on_progress: Any = None,
+    ) -> bool:
+        """Stream a package's bytes directly via ``get-package``. Never raises.
+
+        The reference launcher's fallback for exactly the case this store
+        hits: ``get-package-details`` answering a package with no
+        ``download_url`` (confirmed live 2026-09-15 — not necessarily
+        "doesn't exist", just "no direct CDN URL for this one"). Unlike
+        ``download_package``, this is a POST straight to
+        ``{primary}/apis/launcher/1/get-package`` with the same
+        ``{category, subcategory, name, version}`` identity (form-encoded,
+        matching ``_form_body``) plus the bearer token — the reference
+        only sends the token here, never on a resolved ``download_url``
+        (those are presumed pre-signed).
+        """
+        url = f"{self._config.api_endpoint}/apis/launcher/1/get-package"
+        body = _form_body({
+            "category": category, "subcategory": subcategory,
+            "name": name, "version": version,
+        })
+        return await asyncio.to_thread(
+            _download_direct_blocking, url, body, access_token, dest_path, on_progress,
+        )
+
     # ── Server list (GSH — unauthenticated, separate backend) ──────────
 
     async def server_list(self, *, status_level: int = 1) -> list[dict[str, Any]] | None:
@@ -294,6 +320,53 @@ def _download_blocking(
         return True
     except Exception:
         logger.exception("[W3DHub] download %s failed", download_url)
+        if os.path.isfile(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+        return False
+
+
+def _download_direct_blocking(
+    url: str, body: str, access_token: str, dest_path: str, on_progress: Any,
+) -> bool:
+    """The synchronous half of :meth:`W3DHubApi.download_package_direct`.
+
+    A POST (not a GET) with a form body identifying the package, same
+    chunked-write-then-atomic-rename shape as :func:`_download_blocking`.
+    """
+    from unifideck.core.net.ssl_helpers import ssl_ctx_permissive
+
+    tmp_path = f"{dest_path}.part"
+    headers = {**_FORM_HEADERS, "authorization": f"Bearer {access_token}"}
+    try:
+        os.makedirs(os.path.dirname(dest_path) or ".", exist_ok=True)
+        ctx = ssl_ctx_permissive("W3D Hub package download — outdated Deck cert store")
+        req = urllib.request.Request(
+            url, data=body.encode("utf-8"), headers=headers, method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=300, context=ctx) as response:
+            if response.status not in (200, 206):
+                logger.warning(
+                    "[W3DHub] direct download %s: HTTP %d", url, response.status,
+                )
+                return False
+            total = int(response.headers.get("Content-Length") or 0)
+            downloaded = 0
+            with open(tmp_path, "wb") as f:
+                while True:
+                    chunk = response.read(_DOWNLOAD_CHUNK_SIZE)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    if on_progress:
+                        on_progress(downloaded, total)
+        os.replace(tmp_path, dest_path)
+        return True
+    except Exception:
+        logger.exception("[W3DHub] direct download %s failed", url)
         if os.path.isfile(tmp_path):
             try:
                 os.unlink(tmp_path)
