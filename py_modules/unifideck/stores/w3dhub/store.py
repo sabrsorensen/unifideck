@@ -174,6 +174,17 @@ class W3DHubStore(StoreBase):
             return InstallResult(success=False, error="invalid_game_id", game_id=game_id)
         app_id, channel_id = parsed
 
+        # Confirmed live 2026-09-15: catalog browsing and the manifest
+        # itself need no sign-in (see is_available()), but every actual
+        # content-package lookup does -- get-package-details returns a
+        # blanket {"error": "not-found"} when unauthenticated, for every
+        # package name/version, not just missing ones. Without this check
+        # an install run while logged out fails deep inside install_title
+        # with a cryptic "Package binaries:X has no download_url
+        # (not-found)" that reads like a data gap, not an auth problem.
+        if self._access_token() is None:
+            return InstallResult(success=False, error="not_authenticated", game_id=game_id)
+
         catalog = await fetch_catalog(self._api, access_token=self._access_token())
         entry = catalog.get(app_id) if catalog else None
         if entry is None:
