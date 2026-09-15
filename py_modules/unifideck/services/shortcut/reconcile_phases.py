@@ -510,6 +510,19 @@ class _ReconcilePhasesMixin:
             "Devkit": 0,
             "DevkitGameID": "",
             "DevkitOverrideAppID": 0,
+            # Every shortcut Steam's own client writes carries this field
+            # (even empty) -- confirmed live 2026-09-14: a shortcut written
+            # without it never appears in Steam's live app list after a
+            # restart (silently dropped, no error), which is why every game
+            # a store's very first-ever from-scratch shortcut created here
+            # (never previously written by Steam or reclaimed from an
+            # orphan) failed to show up at all. Every other store's
+            # shortcuts on the affected Deck had already been through
+            # ``_update_existing_shortcut``/``_reclaim_orphan`` at least
+            # once, which preserve whatever fields an entry already has
+            # rather than rebuilding it -- so they carried this from
+            # Steam's own original write and never exposed the gap.
+            "sortas": "",
             # New shortcuts start with no play history (0 = never played).
             # Steam stamps the real time on first launch, and
             # ``_update_existing_shortcut`` preserves it on later syncs.
