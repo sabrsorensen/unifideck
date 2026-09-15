@@ -168,7 +168,21 @@ async def _fetch_package_details(
         {"category": r.category, "subcategory": r.subcategory, "name": r.name, "version": r.version}
         for r in refs
     ]
-    details = await api.get_package_details(payload, access_token=access_token, alt=True)
+    # Confirmed live 2026-09-15: the alt/community-mirror backend answers
+    # every *content*-package lookup with a blanket {"error": "not-found"}
+    # -- not just for genuinely missing packages, but for ones proven to
+    # exist (a manifest-listed .mix file, and even the exact package a
+    # real logged-in install just failed to fetch). manifest.xml itself
+    # fetches fine there (it's the one thing store.py documents as public
+    # metadata), but package-details for real content apparently isn't
+    # actually served from alt at all. secure.w3dhub.com (primary) 307s
+    # unauthenticated requests straight to the alt host for this same
+    # endpoint, which is why an unauthenticated call there looked
+    # equivalent in earlier testing -- but is_available()/install_game's
+    # own auth gate means this function only ever runs authenticated, so
+    # prefer primary (alt=False) whenever there's a token to send it.
+    alt = access_token is None
+    details = await api.get_package_details(payload, access_token=access_token, alt=alt)
     if details is None:
         raise InstallError("Could not fetch package details")
     result: dict[tuple[str, str, str, str], dict[str, Any]] = {}
