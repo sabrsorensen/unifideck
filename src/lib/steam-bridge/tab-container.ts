@@ -101,21 +101,15 @@ export function getUnifideckTabs(): UnifideckTab[] {
       filters: [{ type: "store", params: { store: "battlenet" } }],
     },
     {
-      id: "unifideck-w3dhub",
-      title: t("deckTabs.w3dhub"),
-      position: 9,
-      filters: [{ type: "store", params: { store: "w3dhub" } }],
-    },
-    {
       id: "unifideck-microsoft",
       title: t("deckTabs.microsoft"),
-      position: 10,
+      position: 9,
       filters: [{ type: "store", params: { store: "microsoft" } }],
     },
     {
       id: "unifideck-gamevault",
       title: t("deckTabs.gamevault"),
-      position: 11,
+      position: 10,
       filters: [{ type: "store", params: { store: "gamevault" } }],
     },
     {
@@ -123,7 +117,7 @@ export function getUnifideckTabs(): UnifideckTab[] {
       // before it takes its number and this one moves down.
       id: "unifideck-nonsteam",
       title: t("deckTabs.nonSteam"),
-      position: 12,
+      position: 11,
       filters: [{ type: "nonSteam", params: {} }],
       skipCollection: true,
     },
@@ -404,8 +398,7 @@ type ConnectableStore =
   | "ubisoft"
   | "battlenet"
   | "microsoft"
-  | "gamevault"
-  | "w3dhub";
+  | "gamevault";
 
 class TabManager {
   private tabs: UnifideckTabContainer[] = [];
@@ -418,7 +411,6 @@ class TabManager {
     battlenet: 0,
     microsoft: 0,
     gamevault: 0,
-    w3dhub: 0,
   };
   private version = 0;
   private listeners: (() => void)[] = [];
@@ -470,7 +462,6 @@ class TabManager {
       "unifideck-amazon": "amazon",
       "unifideck-ubisoft": "ubisoft",
       "unifideck-battlenet": "battlenet",
-      "unifideck-w3dhub": "w3dhub",
       "unifideck-microsoft": "microsoft",
       "unifideck-gamevault": "gamevault",
     };

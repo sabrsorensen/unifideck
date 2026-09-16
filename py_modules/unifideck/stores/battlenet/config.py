@@ -5,10 +5,10 @@ py_modules/unifideck/stores/battlenet/config.py
 Follows the Ubisoft ``_FIELD_SPECS`` pattern: every key is declared once
 with its type and default, so ``from_config_manager`` gets coercion and
 per-key fallback for free rather than scattering ``get_cfg`` calls. The
-coercion itself is shared with W3D Hub's config via
-``stores/shared/field_specs_config.py`` (promoted when the two became
-byte-identical — see that module's docstring for why Ubisoft's own,
-differently-shaped ``_FIELD_SPECS`` is deliberately not part of this).
+coercion itself lives in ``stores/shared/field_specs_config.py`` (promoted
+out after a second store's config.py turned out byte-identical — see that
+module's docstring for why Ubisoft's own, differently-shaped
+``_FIELD_SPECS`` is deliberately not part of this).
 
 Most of these are paths *inside a Wine prefix* that shift when the client
 changes layout, so they must be tunable without shipping a release. The

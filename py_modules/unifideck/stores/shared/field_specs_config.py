@@ -1,15 +1,18 @@
 """Generic coercion for a ``_FIELD_SPECS``-table frozen config dataclass.
 
-Battle.net and W3D Hub each declare their config as one dict —
-``{dataclass_field_name: (config_key, default)}`` — and need the exact
-same three operations against it: coerce one raw value to its default's
-type, build the dataclass from a plain mapping, and build it from
+A store that declares its config as one dict —
+``{dataclass_field_name: (config_key, default)}`` — needs three
+operations against it: coerce one raw value to its default's type,
+build the dataclass from a plain mapping, and build it from
 ``ConfigManager`` (tolerating an absent/malformed section, since config
 is user-editable and a typo there must not take the plugin down).
-Extracted here after the second copy (``validate_architecture.py``
-check 13, body-shape duplicate detection) rather than left as an
-accepted-forever pair — see ``duplicate_bodies_baseline.json``'s own
-rule: promote, don't grandfather.
+Extracted here (originally out of a byte-identical second copy —
+``validate_architecture.py`` check 13, body-shape duplicate detection —
+rather than left as an accepted-forever pair; see
+``duplicate_bodies_baseline.json``'s own rule: promote, don't
+grandfather) so the next store with this same simple shape has
+somewhere to reach for instead of writing a third copy. Battle.net's
+``config.py`` is the current sole consumer.
 
 **Deliberately not shared with Ubisoft's own ``_FIELD_SPECS``.** Ubisoft's
 table carries an explicit per-field parser callable

@@ -527,11 +527,12 @@ SHARED_HELPERS: dict[str, str] = {
     # nested closures. Check 13 caught only ``_list``; ``_s`` and ``_i`` sat
     # under its body-size floor, which is the floor's honest cost.
     "text_list": "stores/shared/config_reader.py",
-    # Battle.net and W3D Hub each declared the same three coercions over
-    # their own ``_FIELD_SPECS`` table (a different, simpler shape than
-    # Ubisoft's — see field_specs_config.py's docstring for why the two
-    # aren't unified). Promoted on the second copy rather than added to
-    # duplicate_bodies_baseline.json, per that file's own shrink-only rule.
+    # Extracted after a second store declared the same three coercions
+    # over its own ``_FIELD_SPECS`` table (a different, simpler shape
+    # than Ubisoft's — see field_specs_config.py's docstring for why the
+    # two aren't unified). Promoted on the second copy rather than added
+    # to duplicate_bodies_baseline.json, per that file's own shrink-only
+    # rule; Battle.net is the current sole consumer.
     "field_specs_coerce": "stores/shared/field_specs_config.py",
     "field_specs_from_mapping": "stores/shared/field_specs_config.py",
     "field_specs_from_config_manager": "stores/shared/field_specs_config.py",

@@ -47,11 +47,15 @@ class _Host(_ReconcilePhasesMixin):
 
 
 def _game(**overrides: object) -> Game:
+    # The store id here is arbitrary — the bug (and the fix) is in the
+    # shared _build_shortcut_entry helper every store's from-scratch
+    # shortcuts go through, not anything W3D-Hub-specific (see this
+    # module's docstring for which store actually surfaced it live).
     base: dict[str, object] = {
         "app_id": 123,
-        "store": "w3dhub",
-        "store_game_id": "apb-release",
-        "title": "Red Alert: A Path Beyond",
+        "store": "gog",
+        "store_game_id": "some_game",
+        "title": "Some Game",
         "installed": False,
     }
     base.update(overrides)

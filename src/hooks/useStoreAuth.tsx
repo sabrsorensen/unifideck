@@ -27,7 +27,6 @@ import { AuthDispatcher } from "../services/auth/AuthDispatcher";
 import { ChromiumInstallModal } from "../components/modals/ChromiumInstallModal";
 import { STORE_VISUALS } from "../types/store";
 import { connectGameVault } from "../lib/gamevault-connect";
-import { connectW3DHub } from "../lib/w3dhub-connect";
 import type { AuthResult, StoreId } from "../types/api";
 
 /**
@@ -81,25 +80,20 @@ export function useStoreAuth(store: StoreId): UseStoreAuthResult {
   const storeName = STORE_VISUALS[store]?.display_name ?? store;
 
   const connect = useCallback(async (): Promise<AuthResult | null> => {
-    // GameVault and W3D Hub are the two stores whose sign-in is a form
-    // rather than a browser OAuth or a Steam auth shortcut (GameVault's
-    // local-vault mode makes its own flow a short modal chain rather than
-    // a single dialog; W3D Hub's is always the single credentials form —
-    // see w3dhub-connect.tsx). AuthDispatcher coordinates exactly the
-    // handshake neither of these stores has, so both take the modal route
-    // before the dispatcher is ever asked. The chain itself lives in
-    // ``connectGameVault``/``connectW3DHub``; everything after it —
-    // notifyConnected, the toasts, the post-login sync, the AuthResult
-    // shape — is kept in step with the dispatcher path below by hand, so
-    // the two cannot report success differently. That is not free: the
-    // sync kick was missing here for exactly that reason once already,
-    // and a freshly connected GameVault showed nothing until the user
-    // pressed Sync themselves.
-    if (store === "gamevault" || store === "w3dhub") {
-      const result =
-        store === "gamevault"
-          ? await connectGameVault({ setBusy })
-          : await connectW3DHub({ setBusy });
+    // GameVault is the one store whose sign-in is a form rather than a
+    // browser OAuth or a Steam auth shortcut (its local-vault mode makes
+    // its own flow a short modal chain rather than a single dialog).
+    // AuthDispatcher coordinates exactly the handshake this store doesn't
+    // have, so it takes the modal route before the dispatcher is ever
+    // asked. The chain itself lives in ``connectGameVault``; everything
+    // after it — notifyConnected, the toasts, the post-login sync, the
+    // AuthResult shape — is kept in step with the dispatcher path below
+    // by hand, so the two cannot report success differently. That is not
+    // free: the sync kick was missing here for exactly that reason once
+    // already, and a freshly connected GameVault showed nothing until the
+    // user pressed Sync themselves.
+    if (store === "gamevault") {
+      const result = await connectGameVault({ setBusy });
       if (result === null) return null;
       if (result.success) {
         auth.notifyConnected(store);

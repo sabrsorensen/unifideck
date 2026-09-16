@@ -15,7 +15,6 @@ import {
 } from "react-icons/si";
 import { FaGamepad, FaSteam, FaXbox } from "react-icons/fa";
 import { GameVaultIcon } from "./GameVaultIcon";
-import { W3DHubIcon } from "./W3DHubIcon";
 import type { StoreId } from "../../types/api";
 
 /**
@@ -35,10 +34,6 @@ const STORE_ICONS: Record<StoreId, StoreGlyph> = {
   ubisoft: SiUbisoft,
   battlenet: SiBattledotnet,
   gamevault: GameVaultIcon,
-  // No W3D Hub glyph in react-icons/si (an indie community project, not
-  // a simple-icons-listed brand) — uses the official raster mark instead
-  // of a vector glyph. See W3DHubIcon's docstring for why.
-  w3dhub: W3DHubIcon,
 };
 
 interface Props {

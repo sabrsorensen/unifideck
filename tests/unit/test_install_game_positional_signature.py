@@ -46,6 +46,6 @@ def test_every_non_wrapper_store_accepts_the_workers_install_call_shape() -> Non
     assert not cant_bind, (
         f"{cant_bind} cannot bind DownloadWorker._run_install's positional call "
         "shape (game_id, base_path, progress_cb=...) — add a second positional "
-        "parameter (see w3dhub/store.py's install_game for why it's fine for a "
-        "store to just ignore the value)"
+        "parameter (it's fine for a store to just ignore the value if it has "
+        "nowhere store-specific to put it)"
     )

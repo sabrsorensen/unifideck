@@ -61,7 +61,6 @@ describe("skipCollection tagging", () => {
       "unifideck-amazon",
       "unifideck-ubisoft",
       "unifideck-battlenet",
-      "unifideck-w3dhub",
       "unifideck-microsoft",
       "unifideck-gamevault",
     ];

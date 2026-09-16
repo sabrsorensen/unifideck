@@ -74,14 +74,4 @@ export const STORE_VISUALS: Record<StoreId, StoreVisual> = {
     brand_color: "#1a9c3e",
     icon_path: "/assets/gamevault.svg",
   },
-  w3dhub: {
-    id: "w3dhub",
-    display_name: "W3D Hub",
-    // Sampled from the official mark's glowing-sphere blue
-    // (w3dhub.com/media/images/w3dhub.webp). icon_path is vestigial like
-    // every other store's here — StoreIcon.tsx's STORE_ICONS map is what
-    // actually renders (see W3DHubIcon), not this field.
-    brand_color: "#47acce",
-    icon_path: "/assets/w3dhub.svg",
-  },
 };
