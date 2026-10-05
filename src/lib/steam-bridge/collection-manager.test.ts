@@ -298,7 +298,7 @@ describe("startCollectionManager", () => {
    * still empty — `getStoreForApp` matched nothing for ANY per-store tab,
    * and every existing `[Unifideck]` collection got deleted as "nothing
    * to show," not just an idle one. Confirmed on a real Deck: both
-   * Battle.net's and W3D Hub's collections vanished on the same boot,
+   * two stores' collections vanished on the same boot, Battle.net's among them,
    * leaving only the one whose filter never consults the cache
    * (`[Unifideck] Steam`).
    */
