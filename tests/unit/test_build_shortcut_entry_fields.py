@@ -1,20 +1,20 @@
 """``_build_shortcut_entry`` must write every field Steam actually loads.
 
-Confirmed live 2026-09-14 on a real Deck: a brand-new W3D Hub shortcut
-(never previously written by Steam, never reclaimed from an orphan) was
+Confirmed live 2026-09-14 on a real Deck: a brand-new shortcut for a
+newly added store (never previously written by Steam, never reclaimed from an orphan) was
 missing ``sortas``, and Steam silently dropped it from the live app list on
 every restart — no error, no partial data, the shortcut just never existed
-as far as ``collectionStore``/``appStore`` were concerned. ``[Unifideck]
-W3D Hub`` in turn saw zero matching apps and deleted itself as an empty
+as far as ``collectionStore``/``appStore`` were concerned. That store's
+``[Unifideck]`` tab in turn saw zero matching apps and deleted itself as an empty
 collection (``collection-manager.ts``'s ``syncTab``).
 
-This never showed up for any other store on that Deck because every other
+This never showed up for the established stores on that Deck because every other
 store's shortcuts had already been through ``_update_existing_shortcut`` or
 ``_reclaim_orphan`` at least once — both mutate an *existing* dict in place
 and so preserve whatever Steam's own writer originally put there. Only a
 game with **no prior shortcut history at all** exercises the from-scratch
-``_build_shortcut_entry`` path, which is why this was never caught until
-W3D Hub's first-ever sync on a fresh store.
+``_build_shortcut_entry`` path, which is why this was never caught until a
+new store's first-ever sync.
 
 Pinned by diffing raw bytes: a real Steam-authored entry (``vdf.binary_loads``
 over a manually-added non-Steam game's ``shortcuts.vdf`` record) against one
@@ -49,9 +49,9 @@ class _Host(_ReconcilePhasesMixin):
 def _game(**overrides: object) -> Game:
     base: dict[str, object] = {
         "app_id": 123,
-        "store": "w3dhub",
-        "store_game_id": "apb-release",
-        "title": "Red Alert: A Path Beyond",
+        "store": "gog",
+        "store_game_id": "1207658924",
+        "title": "Unreal Tournament 2004",
         "installed": False,
     }
     base.update(overrides)
