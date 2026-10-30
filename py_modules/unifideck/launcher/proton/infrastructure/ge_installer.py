@@ -323,15 +323,33 @@ def _download_with_retry(
     return False
 
 
+def _proton_filter(
+    member: tarfile.TarInfo, path: str,
+) -> tarfile.TarInfo:
+    """``filter="data"``, minus its forced owner-write on regular files.
+
+    GE-Proton ships its Wine files read-only on purpose: Steam runs every
+    installed compat tool concurrently against the shared ``compatdata/0``
+    prefix at login, and that prefix's builtin DLLs are symlinks into
+    whichever Proton last updated it — so a writable install gets another
+    Wine version's DLLs written straight into it. Keep the archive's own
+    mode, still stripping setuid/setgid/sticky and group/other write.
+    """
+    filtered = tarfile.data_filter(member, path)
+    if filtered.isreg():
+        return filtered.replace(mode=member.mode & 0o755, deep=False)
+    return filtered
+
+
 def _extract(tarball: Path, dest: Path) -> bool:
     """Extract ``tarball`` into ``dest``. True on success."""
     try:
         with tarfile.open(tarball, "r:gz") as tar:
             try:
-                # ``filter="data"`` (3.12, backported to 3.11.4) blocks
+                # The ``data`` filter (3.12, backported to 3.11.4) blocks
                 # path-traversal/symlink escapes; the older fallback is
                 # acceptable for a trusted GitHub release tarball.
-                tar.extractall(dest, filter="data")
+                tar.extractall(dest, filter=_proton_filter)
             except TypeError:
                 tar.extractall(dest)  # noqa: S202 — trusted GitHub release tarball
     except (tarfile.TarError, OSError) as e:
