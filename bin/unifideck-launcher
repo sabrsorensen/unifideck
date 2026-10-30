@@ -7,7 +7,7 @@ process context, where ``LD_LIBRARY_PATH`` and ``LD_PRELOAD`` are
 populated by the Steam Runtime — values that systematically break
 non-Steam binaries (Wine, Proton, store CLIs). Both variables are
 scrubbed before any Python import so the dispatcher inherits a
-clean environment.
+clean environment. A missing ``PATH`` is restored at the same point.
 
 The wrapper has THREE responsibilities, in order:
     1. Sanitise the inherited environment.
@@ -26,6 +26,15 @@ import os
 
 os.environ.pop("LD_LIBRARY_PATH", None)
 os.environ.pop("LD_PRELOAD", None)
+# Steam's containerised (steamrt64) client launches shortcuts alongside
+# itself via steam-runtime-supervisor, which drops ``PATH`` entirely.
+# ``shutil.which`` then falls back to ``os.confstr("CS_PATH")`` while
+# ``subprocess`` falls back to ``os.defpath`` — on hosts where those
+# differ (NixOS: CS_PATH includes /run/current-system/sw/bin) a binary
+# can be *found* yet fail to *spawn* with FileNotFoundError. Restore
+# PATH from the same source ``shutil.which`` uses so both agree.
+if "PATH" not in os.environ:
+    os.environ["PATH"] = os.confstr("CS_PATH") or os.defpath
 
 import sys
 from pathlib import Path
