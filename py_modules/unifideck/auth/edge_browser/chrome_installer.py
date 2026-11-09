@@ -52,6 +52,8 @@ CHROME_SHA256 = "d35a9064068274af1a2efa8bcb9b42306e590f9b5c929789f2e0e51a3588049
 CHROME_DOWNLOAD_MB = 160
 #: ``install_blocking``'s error when the download itself failed (no network).
 NETWORK_FAILURE = "microsoft.chromiumInstallTimeout"
+#: A distro-managed browser that takes precedence over the download.
+SYSTEM_BROWSER = "chromium"
 _MARKER = ".verified"
 _CHUNK = 1 << 20
 
@@ -71,8 +73,20 @@ def chrome_binary(version: str = CHROME_VERSION) -> Path:
     return install_dir(version) / _ARCHIVE_DIR / "chrome"
 
 
+def system_browser() -> str | None:
+    """Absolute path of a distro-managed Chromium, or None.
+
+    The pinned build is a generic-Linux binary that cannot start on NixOS,
+    whose browser comes from the system configuration instead. Resolved to
+    an absolute path because Steam can start the launcher with PATH unset.
+    """
+    return shutil.which(SYSTEM_BROWSER)
+
+
 def is_ready(version: str = CHROME_VERSION) -> bool:
-    """True when the pinned build was verified and is still executable."""
+    """True when a browser is available: the system's or the verified build."""
+    if system_browser():
+        return True
     binary = chrome_binary(version)
     return (install_dir(version) / _MARKER).is_file() and os.access(binary, os.X_OK)
 
@@ -198,6 +212,9 @@ class ChromeInstaller:
 
     def find_cmd(self) -> list[str] | None:
         """The browser command, or None until it is installed."""
+        system = system_browser()
+        if system:
+            return [system]
         return [str(chrome_binary())] if is_ready() else None
 
     @property
